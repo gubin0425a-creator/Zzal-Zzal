@@ -1,4 +1,4 @@
-﻿<!-- Version: 1.0.2 -->
+﻿<!-- Version: 1.0.3 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -78,38 +78,61 @@
     </div>
 
     <!-- ==============================================
-         STEP 1: Wallet Emptying (예산 입력 화면)
+         STEP 1: Wallet Emptying & Category Select (예산 및 카테고리 선택)
          ============================================== -->
-    <section id="step1" class="step-screen flex-1 flex flex-col justify-between pt-8">
-      <div class="text-center my-auto space-y-6">
+    <section id="step1" class="step-screen flex-1 flex flex-col justify-between pt-8 space-y-6">
+      <div class="text-center my-auto space-y-5">
         <!-- Title & Hero Emoji -->
-        <div class="space-y-2">
+        <div class="space-y-1">
           <div class="inline-block bg-neonYellow text-darkBg text-5xl p-4 rounded-3xl transform -rotate-6 animate-bounce glow-yellow">
             🎰
           </div>
           <h1 class="font-title text-4xl text-neonYellow tracking-tight pt-3">방과후 룰렛</h1>
-          <p class="text-gray-400 text-sm font-semibold">오늘 우리 총알 얼마 있어? 탈탈 털어봐! 💸</p>
+          <p class="text-gray-400 text-xs font-semibold">오늘 우리 총알 얼마 있어? 탈탈 털어봐! 💸</p>
         </div>
 
         <!-- Inputs Group -->
-        <div class="space-y-4 text-left">
+        <div class="space-y-3.5 text-left">
           <!-- Input 1: Headcount -->
-          <div class="space-y-2">
+          <div class="space-y-1.5">
             <label class="text-xs font-bold text-neonPurple tracking-wider block">우리 몇 명이야? 👥</label>
             <div class="relative">
               <input type="number" id="input-people" value="3" min="1" max="20"
-                class="w-full bg-darkCard border-2 border-neonPurple/30 rounded-2xl py-4 px-5 text-xl font-bold focus:border-neonYellow focus:outline-none transition-colors text-white">
+                class="w-full bg-darkCard border-2 border-neonPurple/30 rounded-2xl py-3 px-5 text-lg font-bold focus:border-neonYellow focus:outline-none transition-colors text-white">
               <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">명</span>
             </div>
           </div>
 
           <!-- Input 2: Budget -->
-          <div class="space-y-2">
+          <div class="space-y-1.5">
             <label class="text-xs font-bold text-neonPurple tracking-wider block">다 합쳐서 예산 얼마? 💳</label>
             <div class="relative">
               <input type="number" id="input-budget" placeholder="예: 30000" min="1000" step="1000"
-                class="w-full bg-darkCard border-2 border-neonPurple/30 rounded-2xl py-4 px-5 text-xl font-bold focus:border-neonYellow focus:outline-none transition-colors text-white placeholder-gray-700">
+                class="w-full bg-darkCard border-2 border-neonPurple/30 rounded-2xl py-3 px-5 text-lg font-bold focus:border-neonYellow focus:outline-none transition-colors text-white placeholder-gray-700">
               <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">원</span>
+            </div>
+          </div>
+
+          <!-- Category Selector -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-neonPurple tracking-wider block">하고 싶은 거 골라봐! (중복/패스 가능) ✨</label>
+            <div class="grid grid-cols-2 gap-2" id="category-picker">
+              <button type="button" onclick="toggleCategory('food')" id="cat-food"
+                class="bg-darkCard border-2 border-neonPurple/20 hover:border-neonPurple/50 rounded-2xl py-3 px-4 text-xs font-bold transition-all duration-150 flex items-center justify-center gap-1.5 text-gray-400">
+                <span>🥘 먹거리</span>
+              </button>
+              <button type="button" onclick="toggleCategory('play')" id="cat-play"
+                class="bg-darkCard border-2 border-neonPurple/20 hover:border-neonPurple/50 rounded-2xl py-3 px-4 text-xs font-bold transition-all duration-150 flex items-center justify-center gap-1.5 text-gray-400">
+                <span>🎤 놀거리</span>
+              </button>
+              <button type="button" onclick="toggleCategory('photo')" id="cat-photo"
+                class="bg-darkCard border-2 border-neonPurple/20 hover:border-neonPurple/50 rounded-2xl py-3 px-4 text-xs font-bold transition-all duration-150 flex items-center justify-center gap-1.5 text-gray-400">
+                <span>📸 사진</span>
+              </button>
+              <button type="button" onclick="toggleCategory('shop')" id="cat-shop"
+                class="bg-darkCard border-2 border-neonPurple/20 hover:border-neonPurple/50 rounded-2xl py-3 px-4 text-xs font-bold transition-all duration-150 flex items-center justify-center gap-1.5 text-gray-400">
+                <span>🛍️ 쇼핑</span>
+              </button>
             </div>
           </div>
         </div>
@@ -117,7 +140,7 @@
 
       <!-- Action Button -->
       <button onclick="startRoulette()"
-        class="w-full bg-neonYellow hover:bg-[#b2d600] active:scale-95 text-darkBg font-title text-xl py-5 rounded-2xl transition-all duration-150 flex items-center justify-center gap-2 glow-yellow mt-6">
+        class="w-full bg-neonYellow hover:bg-[#b2d600] active:scale-95 text-darkBg font-title text-lg py-4.5 rounded-2xl transition-all duration-150 flex items-center justify-center gap-2 glow-yellow">
         이 돈으로 뽕뽑기 🎲
       </button>
     </section>
@@ -142,10 +165,10 @@
           <span class="absolute top-2 text-2xl">🥣</span>
           <span class="absolute right-2 text-2xl">🎤</span>
           <span class="absolute bottom-2 text-2xl">📸</span>
-          <span class="absolute left-2 text-2xl">🕹️</span>
+          <span class="absolute left-2 text-2xl">🛍️</span>
           <span class="absolute top-10 right-10 text-2xl">🍓</span>
-          <span class="absolute bottom-10 right-10 text-2xl">🖥️</span>
-          <span class="absolute bottom-10 left-10 text-2xl">🍜</span>
+          <span class="absolute bottom-10 right-10 text-2xl">🕹️</span>
+          <span class="absolute bottom-10 left-10 text-2xl">✏️</span>
           <span class="absolute top-10 left-10 text-2xl">🌶️</span>
           <!-- Wheel Center Pin -->
           <div class="w-10 h-10 rounded-full bg-neonPink border-4 border-white z-10 flex items-center justify-center shadow-lg">
@@ -158,19 +181,19 @@
 
       <!-- Loading Text -->
       <div class="space-y-3 px-4">
-        <h3 class="font-title text-2xl text-neonYellow tracking-wider animate-pulse">코스 짜는 중...</h3>
-        <p class="text-gray-400 text-sm font-semibold">우주의 기운을 모아 가성비 코스 설계 중 🚀</p>
+        <h3 class="font-title text-2xl text-neonYellow tracking-wider animate-pulse">골든 코스 짜는 중...</h3>
+        <p class="text-gray-400 text-sm font-semibold">조건에 맞춰 가성비 황금 코스 짜는 중... 🚀</p>
       </div>
     </section>
 
     <!-- ==============================================
-         STEP 3: Course Result (결과 화면)
+         STEP 3: Course Result (결과 및 에러 화면)
          ============================================== -->
     <section id="step3" class="step-screen hidden flex-1 flex flex-col justify-between pt-4">
-      <div class="space-y-4 overflow-y-auto max-h-[500px] pr-1 scrollbar-thin">
+      <div class="space-y-4 overflow-y-auto max-h-[500px] pr-1 scrollbar-thin flex-1 flex flex-col justify-center">
         
         <!-- Trendy Receipt Card -->
-        <div class="bg-slate-50 text-slate-800 rounded-3xl p-5 shadow-2xl relative receipt-bottom font-mono flex flex-col gap-4">
+        <div id="receipt-card" class="bg-slate-50 text-slate-800 rounded-3xl p-5 shadow-2xl relative receipt-bottom font-mono flex flex-col gap-4">
           <!-- Receipt Header -->
           <div class="text-center border-b-2 border-dashed border-slate-300 pb-3">
             <h2 class="font-title text-2xl tracking-tighter text-neonPink">SPENDING RECEIPT</h2>
@@ -200,8 +223,18 @@
           </div>
         </div>
 
+        <!-- Error Card (Hidden by default) -->
+        <div id="error-card" class="hidden bg-darkCard border-2 border-neonPink/40 rounded-3xl p-6 text-center space-y-5 glow-pink my-auto">
+          <span class="text-6xl inline-block animate-bounce">💸</span>
+          <h2 class="font-title text-2xl text-neonPink">예산 초과 비상!</h2>
+          <p class="text-sm text-gray-300 leading-relaxed font-semibold">
+            예산이 너무 부족해요!<br>
+            짤짤이를 더 모아오세요! 😭
+          </p>
+        </div>
+
         <!-- Dopamine Fun Banner -->
-        <div class="bg-darkCard border-2 border-neonYellow/20 rounded-2xl p-4 text-center glow-yellow">
+        <div id="fun-banner" class="bg-darkCard border-2 border-neonYellow/20 rounded-2xl p-4 text-center glow-yellow">
           <p class="text-xs text-neonYellow font-bold uppercase tracking-wider mb-1">🎮 우정 테스트 찬스 🎮</p>
           <p class="text-sm font-semibold text-gray-200" id="fun-phrase">
             남은 돈으로 아이스크림 내기 가위바위보! 🍦
@@ -212,7 +245,7 @@
       <!-- Action Buttons -->
       <div class="space-y-3 mt-6">
         <div class="grid grid-cols-2 gap-3">
-          <button onclick="reroll()"
+          <button onclick="reroll()" id="btn-reroll"
             class="bg-neonPurple hover:bg-purple-600 text-white font-title text-base py-4 rounded-2xl transition-all duration-150 flex items-center justify-center gap-1.5 glow-purple">
             다시 돌리기 🔄
           </button>
@@ -222,7 +255,7 @@
           </button>
         </div>
         <div class="text-center text-[10px] text-gray-600 font-mono select-none">
-          방과후 룰렛 <span id="app-version">v1.0.2</span>
+          방과후 룰렛 <span id="app-version">v1.0.3</span>
         </div>
       </div>
     </section>
@@ -230,23 +263,26 @@
 
   <script>
     // --- CORE DATABASE (가상의 동네 물가) ---
-    const FOOD_ITEMS = [
-      { name: "컵떡볶이 🥣", price: 2500, type: "per" },
-      { name: "탕후루 🍓", price: 3000, type: "per" },
-      { name: "편의점 컵라면 🍜", price: 1500, type: "per" },
-      { name: "마라탕 🌶️", price: 8000, type: "per" }
-    ];
-
-    const PLAY_ITEMS = [
-      { name: "코인노래방 🎤", price: 1000, type: "per" },
-      { name: "PC방 1시간 🖥️", price: 1500, type: "per" },
-      { name: "오락실 🕹️", price: 1000, type: "per" },
-      { name: "다이소 구경 🛍️", price: 0, type: "per" }
-    ];
-
-    const PHOTO_ITEMS = [
-      { name: "네컷사진 📸", price: 5000, type: "team" }
-    ];
+    const DB = {
+      food: [
+        { name: "컵떡볶이 🥣", price: 2500, type: "per" },
+        { name: "탕후루 🍓", price: 3000, type: "per" },
+        { name: "편의점 컵라면 🍜", price: 1500, type: "per" },
+        { name: "마라탕 🌶️", price: 8000, type: "per" }
+      ],
+      play: [
+        { name: "코인노래방 🎤", price: 1000, type: "per" },
+        { name: "PC방 1시간 🖥️", price: 1500, type: "per" },
+        { name: "오락실 🕹️", price: 1000, type: "per" }
+      ],
+      photo: [
+        { name: "네컷사진 📸", price: 5000, type: "team" }
+      ],
+      shop: [
+        { name: "다이소 구경 🛍️", price: 500, type: "per" },
+        { name: "문구점 탐방 ✏️", price: 1000, type: "per" }
+      ]
+    };
 
     // Fun messages based on remaining balance
     const FUN_MESSAGES = [
@@ -300,6 +336,22 @@
     // Input States
     let peopleCount = 3;
     let budget = 0;
+    let selectedCategories = [];
+
+    // --- CATEGORY TOGGLE LOGIC ---
+    function toggleCategory(cat) {
+      const btn = document.getElementById('cat-' + cat);
+      if (selectedCategories.includes(cat)) {
+        selectedCategories = selectedCategories.filter(c => c !== cat);
+        btn.classList.remove('border-neonPurple', 'text-white', 'bg-neonPurple/20', 'glow-purple');
+        btn.classList.add('border-neonPurple/20', 'text-gray-400', 'bg-darkCard');
+      } else {
+        selectedCategories.push(cat);
+        btn.classList.remove('border-neonPurple/20', 'text-gray-400', 'bg-darkCard');
+        btn.classList.add('border-neonPurple', 'text-white', 'bg-neonPurple/20', 'glow-purple');
+      }
+      playBeep(600, 0.05, "sine");
+    }
 
     // --- NAVIGATION FLOW ---
     function showScreen(stepId) {
@@ -316,6 +368,13 @@
 
       peopleCount = parseInt(peopleInput.value) || 3;
       budget = parseInt(budgetInput.value) || 0;
+
+      if (!peopleInput.value || peopleCount <= 0) {
+        playErrorSound();
+        alert("몇 명인지 알려줘야 룰렛을 굴리지! 👥");
+        peopleInput.focus();
+        return;
+      }
 
       if (!budgetInput.value || budget <= 0) {
         playErrorSound();
@@ -338,80 +397,115 @@
       wheel.classList.add('spinning');
 
       // Course Calculation during spin
-      const course = calculateCourse(peopleCount, budget);
+      const course = calculateCourse(peopleCount, budget, selectedCategories);
 
       setTimeout(() => {
         displayResult(course);
         showScreen('step3');
-        playSuccessSound();
+        if (course.error) {
+          playErrorSound();
+        } else {
+          playSuccessSound();
+        }
       }, 2000);
     }
 
     // --- ALGORITHM: COURSE GENERATION ---
-    function calculateCourse(N, B) {
-      let bestCourse = [];
+    function calculateCourse(N, B, chosenCats) {
+      let isRandomMode = chosenCats.length === 0;
+      let targetCategories = isRandomMode ? ['food', 'play', 'photo', 'shop'] : [...chosenCats];
+
+      // 예산 내 성립 가능한 최소 조합 비용 검사
+      let minCost = 0;
+      targetCategories.forEach(cat => {
+        let cheapestItem = DB[cat].reduce((min, p) => p.price < min.price ? p : min, DB[cat][0]);
+        minCost += cheapestItem.type === "per" ? cheapestItem.price * N : cheapestItem.price;
+      });
+
+      if (minCost > B) {
+        return { error: true };
+      }
+
+      let finalCourse = null;
       let maxSpent = -1;
 
-      // Make a pool of all options
-      const foods = [...FOOD_ITEMS];
-      const plays = [...PLAY_ITEMS];
-      const photos = [...PHOTO_ITEMS];
+      // 300회 시뮬레이션을 돌려 예산 범위 내 최적 뽕뽑기(최대 지출) 조합 도출
+      for (let run = 0; run < 300; run++) {
+        let catsToUse = [...targetCategories];
+        if (isRandomMode) {
+          // 아무것도 안 골랐다면 전체 카테고리 중 랜덤 2~3개만 구성
+          let shuffled = catsToUse.sort(() => 0.5 - Math.random());
+          let count = Math.random() > 0.5 ? 3 : 2;
+          catsToUse = shuffled.slice(0, count);
+        }
 
-      // Try random combinations 100 times to maximize fun & remaining balance optimization
-      for (let i = 0; i < 150; i++) {
         let currentSpent = 0;
-        let selected = [];
+        let items = [];
 
-        // 1. Pick Food (Mandatory, or skip if ultra low budget)
-        const food = foods[Math.floor(Math.random() * foods.length)];
-        const foodCost = food.price * N;
-        if (currentSpent + foodCost <= B) {
-          selected.push({ ...food, total: foodCost });
-          currentSpent += foodCost;
-        }
+        catsToUse.forEach(cat => {
+          let list = DB[cat];
+          let randomItem = list[Math.floor(Math.random() * list.length)];
+          let itemCost = randomItem.type === "per" ? randomItem.price * N : randomItem.price;
+          items.push({ ...randomItem, total: itemCost });
+          currentSpent += itemCost;
+        });
 
-        // 2. Pick Play Activity
-        const play = plays[Math.floor(Math.random() * plays.length)];
-        const playCost = play.price * N;
-        if (currentSpent + playCost <= B) {
-          selected.push({ ...play, total: playCost });
-          currentSpent += playCost;
-        }
-
-        // 3. Pick Photo Option (50% probability to make it dynamic)
-        if (Math.random() > 0.4) {
-          const photo = photos[0];
-          const photoCost = photo.price; // Flat rate per team
-          if (currentSpent + photoCost <= B) {
-            selected.push({ ...photo, total: photoCost });
-            currentSpent += photoCost;
+        if (currentSpent <= B) {
+          if (currentSpent > maxSpent) {
+            maxSpent = currentSpent;
+            finalCourse = {
+              items: items,
+              totalSpent: currentSpent,
+              change: B - currentSpent,
+              error: false
+            };
           }
         }
-
-        // Keep tracking the best course that uses most budget but does not exceed it
-        if (currentSpent <= B && currentSpent > maxSpent && selected.length >= 1) {
-          maxSpent = currentSpent;
-          bestCourse = selected;
-        }
       }
 
-      // Fallback Strategy: If everything is too expensive for the budget
-      if (bestCourse.length === 0) {
-        // Absolute cheapest combo: Daiso (0원)
-        const freePlay = PLAY_ITEMS.find(p => p.price === 0);
-        bestCourse.push({ ...freePlay, total: 0 });
-        maxSpent = 0;
+      // 시뮬레이션 중 예산 내 뽕뽑기 조합을 못 찾았을 경우 가장 싼 옵션 조합으로 강제 할당
+      if (!finalCourse) {
+        let items = [];
+        let currentSpent = 0;
+        targetCategories.forEach(cat => {
+          let cheapestItem = DB[cat].reduce((min, p) => p.price < min.price ? p : min, DB[cat][0]);
+          let itemCost = cheapestItem.type === "per" ? cheapestItem.price * N : cheapestItem.price;
+          items.push({ ...cheapestItem, total: itemCost });
+          currentSpent += itemCost;
+        });
+        finalCourse = {
+          items: items,
+          totalSpent: currentSpent,
+          change: B - currentSpent,
+          error: false
+        };
       }
 
-      return {
-        items: bestCourse,
-        totalSpent: maxSpent,
-        change: B - maxSpent
-      };
+      return finalCourse;
     }
 
     // --- DISPLAY RESULTS ---
     function displayResult(course) {
+      const receiptCard = document.getElementById('receipt-card');
+      const errorCard = document.getElementById('error-card');
+      const funBanner = document.getElementById('fun-banner');
+      const btnReroll = document.getElementById('btn-reroll');
+
+      if (course.error) {
+        // 에러 화면 연출
+        receiptCard.classList.add('hidden');
+        funBanner.classList.add('hidden');
+        btnReroll.classList.add('hidden');
+        errorCard.classList.remove('hidden');
+        return;
+      }
+
+      // 정상 화면 연출
+      receiptCard.classList.remove('hidden');
+      funBanner.classList.remove('hidden');
+      btnReroll.classList.remove('hidden');
+      errorCard.classList.add('hidden');
+
       // 1. Date Formatting
       const now = new Date();
       const formattedDate = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -469,6 +563,12 @@
     // Go back to step 1
     function goHome() {
       document.getElementById('input-budget').value = '';
+      // 카테고리 선택 초기화
+      selectedCategories = [];
+      const catButtons = document.querySelectorAll('#category-picker button');
+      catButtons.forEach(btn => {
+        btn.className = "bg-darkCard border-2 border-neonPurple/20 hover:border-neonPurple/50 rounded-2xl py-3 px-4 text-xs font-bold transition-all duration-150 flex items-center justify-center gap-1.5 text-gray-400";
+      });
       showScreen('step1');
     }
   </script>
