@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>방과후 룰렛 🎰</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts (Outfit & Black Han Sans for hip design) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Outfit:wght@400;600;800&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            neonYellow: '#d4ff00',
+            neonPurple: '#c084fc',
+            neonPink: '#ff007f',
+            darkBg: '#090514',
+            darkCard: '#150f24',
+          },
+          fontFamily: {
+            outfit: ['Outfit', 'Noto Sans KR', 'sans-serif'],
+            title: ['Black Han Sans', 'Noto Sans KR', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    /* Smooth transition */
+    .step-screen {
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Neon glow effects */
+    .glow-yellow {
+      box-shadow: 0 0 15px rgba(212, 255, 0, 0.4);
+    }
+    .glow-purple {
+      box-shadow: 0 0 15px rgba(192, 132, 252, 0.4);
+    }
+    .glow-pink {
+      box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
+    }
+    
+    /* Custom Receipt Jagged Border */
+    .receipt-bottom {
+      clip-path: polygon(
+        0% 0%, 100% 0%, 100% 96%, 
+        97% 100%, 94% 96%, 91% 100%, 88% 96%, 85% 100%, 82% 96%, 79% 100%, 76% 96%, 73% 100%, 70% 96%, 67% 100%, 64% 96%, 61% 100%, 58% 96%, 55% 100%, 52% 96%, 49% 100%, 46% 96%, 43% 100%, 40% 96%, 37% 100%, 34% 96%, 31% 100%, 28% 96%, 25% 100%, 22% 96%, 19% 100%, 16% 96%, 13% 100%, 10% 96%, 7% 100%, 4% 96%, 0% 100%
+      );
+    }
+    
+    /* Roulette spin animation */
+    @keyframes spin-roulette {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(1800deg); }
+    }
+    .spinning {
+      animation: spin-roulette 2s cubic-bezier(0.1, 0.8, 0.1, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#05020a] font-outfit text-white flex justify-center items-center min-h-screen overflow-x-hidden p-4">
+
+  <!-- Mobile Container (Max 400px, Centered) -->
+  <main class="w-full max-w-[400px] min-h-[750px] bg-darkBg border-2 border-neonPurple/30 rounded-[36px] shadow-2xl relative overflow-hidden flex flex-col justify-between p-6 glow-purple">
+    
+    <!-- TOP STICKER TAG -->
+    <div class="absolute top-3 left-1/2 -translate-x-1/2 bg-neonPurple text-darkBg text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider select-none z-10">
+      ⚡ DOPAMINE ONLY ⚡
+    </div>
+
+    <!-- ==============================================
+         STEP 1: Wallet Emptying (예산 입력 화면)
+         ============================================== -->
+    <section id="step1" class="step-screen flex-1 flex flex-col justify-between pt-8">
+      <div class="text-center my-auto space-y-6">
+        <!-- Title & Hero Emoji -->
+        <div class="space-y-2">
+          <div class="inline-block bg-neonYellow text-darkBg text-5xl p-4 rounded-3xl transform -rotate-6 animate-bounce glow-yellow">
+            🎰
+          </div>
+          <h1 class="font-title text-4xl text-neonYellow tracking-tight pt-3">방과후 룰렛</h1>
+          <p class="text-gray-400 text-sm font-semibold">오늘 우리 총알 얼마 있어? 탈탈 털어봐! 💸</p>
+        </div>
+
+        <!-- Inputs Group -->
+        <div class="space-y-4 text-left">
+          <!-- Input 1: Headcount -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-neonPurple tracking-wider block">우리 몇 명이야? 👥</label>
+            <div class="relative">
+              <input type="number" id="input-people" value="3" min="1" max="20"
+                class="w-full bg-darkCard border-2 border-neonPurple/30 rounded-2xl py-4 px-5 text-xl font-bold focus:border-neonYellow focus:outline-none transition-colors text-white">
+              <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">명</span>
+            </div>
+          </div>
+
+          <!-- Input 2: Budget -->
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-neonPurple tracking-wider block">다 합쳐서 예산 얼마? 💳</label>
+            <div class="relative">
+              <input type="number" id="input-budget" placeholder="예: 30000" min="1000" step="1000"
+                class="w-full bg-darkCard border-2 border-neonPurple/30 rounded-2xl py-4 px-5 text-xl font-bold focus:border-neonYellow focus:outline-none transition-colors text-white placeholder-gray-700">
+              <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">원</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button onclick="startRoulette()"
+        class="w-full bg-neonYellow hover:bg-[#b2d600] active:scale-95 text-darkBg font-title text-xl py-5 rounded-2xl transition-all duration-150 flex items-center justify-center gap-2 glow-yellow mt-6">
+        이 돈으로 뽕뽑기 🎲
+      </button>
+    </section>
+
+    <!-- ==============================================
+         STEP 2: Roulette Loading (로딩 화면)
+         ============================================== -->
+    <section id="step2" class="step-screen hidden flex-1 flex flex-col justify-center items-center text-center space-y-8 py-12">
+      <!-- Roulette Container -->
+      <div class="relative w-64 h-64 flex items-center justify-center">
+        <!-- Outer Glowing Ring -->
+        <div class="absolute inset-0 rounded-full border-4 border-dashed border-neonPurple animate-[spin_10s_linear_infinite] opacity-60"></div>
+        
+        <!-- Roulette Wheel Object -->
+        <div id="wheel" class="w-48 h-48 rounded-full border-8 border-neonYellow bg-darkCard flex items-center justify-center relative shadow-2xl overflow-hidden glow-yellow">
+          <!-- Division lines inside roulette -->
+          <div class="absolute w-full h-[2px] bg-neonYellow/30 rotate-0"></div>
+          <div class="absolute w-full h-[2px] bg-neonYellow/30 rotate-45"></div>
+          <div class="absolute w-full h-[2px] bg-neonYellow/30 rotate-90"></div>
+          <div class="absolute w-full h-[2px] bg-neonYellow/30 rotate-135"></div>
+          <!-- Cute Emojis around wheel -->
+          <span class="absolute top-2 text-2xl">🥣</span>
+          <span class="absolute right-2 text-2xl">🎤</span>
+          <span class="absolute bottom-2 text-2xl">📸</span>
+          <span class="absolute left-2 text-2xl">🕹️</span>
+          <span class="absolute top-10 right-10 text-2xl">🍓</span>
+          <span class="absolute bottom-10 right-10 text-2xl">🖥️</span>
+          <span class="absolute bottom-10 left-10 text-2xl">🍜</span>
+          <span class="absolute top-10 left-10 text-2xl">🌶️</span>
+          <!-- Wheel Center Pin -->
+          <div class="w-10 h-10 rounded-full bg-neonPink border-4 border-white z-10 flex items-center justify-center shadow-lg">
+            <span class="text-xs">🔥</span>
+          </div>
+        </div>
+        <!-- Pointer Indicator -->
+        <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-neonPink drop-shadow-md z-20"></div>
+      </div>
+
+      <!-- Loading Text -->
+      <div class="space-y-3 px-4">
+        <h3 class="font-title text-2xl text-neonYellow tracking-wider animate-pulse">코스 짜는 중...</h3>
+        <p class="text-gray-400 text-sm font-semibold">우주의 기운을 모아 가성비 코스 설계 중 🚀</p>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         STEP 3: Course Result (결과 화면)
+         ============================================== -->
+    <section id="step3" class="step-screen hidden flex-1 flex flex-col justify-between pt-4">
+      <div class="space-y-4 overflow-y-auto max-h-[500px] pr-1 scrollbar-thin">
+        
+        <!-- Trendy Receipt Card -->
+        <div class="bg-slate-50 text-slate-800 rounded-3xl p-5 shadow-2xl relative receipt-bottom font-mono flex flex-col gap-4">
+          <!-- Receipt Header -->
+          <div class="text-center border-b-2 border-dashed border-slate-300 pb-3">
+            <h2 class="font-title text-2xl tracking-tighter text-neonPink">SPENDING RECEIPT</h2>
+            <p class="text-[10px] text-slate-400 mt-1 uppercase" id="receipt-date">2026.06.12 19:47:44</p>
+            <p class="text-xs font-bold text-slate-500 mt-0.5" id="receipt-headcount">인원: 3명</p>
+          </div>
+
+          <!-- Selected Course List -->
+          <div class="space-y-3 text-sm" id="course-container">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Total Calculation -->
+          <div class="border-t-2 border-dashed border-slate-300 pt-3 space-y-1">
+            <div class="flex justify-between text-xs text-slate-500 font-bold">
+              <span>총 예산 (BUDGET)</span>
+              <span id="receipt-budget">30,000원</span>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500 font-bold">
+              <span>실제 지출 (TOTAL)</span>
+              <span id="receipt-spent">27,000원</span>
+            </div>
+            <div class="flex justify-between text-lg font-black text-neonPink pt-1 border-t border-slate-200">
+              <span>남은 잔돈 (CHANGE)</span>
+              <span id="receipt-change">3,000원</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dopamine Fun Banner -->
+        <div class="bg-darkCard border-2 border-neonYellow/20 rounded-2xl p-4 text-center glow-yellow">
+          <p class="text-xs text-neonYellow font-bold uppercase tracking-wider mb-1">🎮 우정 테스트 찬스 🎮</p>
+          <p class="text-sm font-semibold text-gray-200" id="fun-phrase">
+            남은 돈으로 아이스크림 내기 가위바위보! 🍦
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-3 mt-6">
+        <button onclick="reroll()"
+          class="bg-neonPurple hover:bg-purple-600 text-white font-title text-base py-4 rounded-2xl transition-all duration-150 flex items-center justify-center gap-1.5 glow-purple">
+          다시 돌리기 🔄
+        </button>
+        <button onclick="goHome()"
+          class="bg-darkCard hover:bg-slate-900 border-2 border-gray-800 text-gray-300 font-title text-base py-4 rounded-2xl transition-all duration-150">
+          처음으로 🏠
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // --- CORE DATABASE (가상의 동네 물가) ---
+    const FOOD_ITEMS = [
+      { name: "컵떡볶이 🥣", price: 2500, type: "per" },
+      { name: "탕후루 🍓", price: 3000, type: "per" },
+      { name: "편의점 컵라면 🍜", price: 1500, type: "per" },
+      { name: "마라탕 🌶️", price: 8000, type: "per" }
+    ];
+
+    const PLAY_ITEMS = [
+      { name: "코인노래방 🎤", price: 1000, type: "per" },
+      { name: "PC방 1시간 🖥️", price: 1500, type: "per" },
+      { name: "오락실 🕹️", price: 1000, type: "per" },
+      { name: "다이소 구경 🛍️", price: 0, type: "per" }
+    ];
+
+    const PHOTO_ITEMS = [
+      { name: "네컷사진 📸", price: 5000, type: "team" }
+    ];
+
+    // Fun messages based on remaining balance
+    const FUN_MESSAGES = [
+      "남은 돈 {change}원으로는 가위바위보 진 사람이 아이스크림 쏘기 🍦",
+      "남은 돈 {change}원! 편의점 껌 한 통 사서 사이좋게 나눠 씹기 🍬",
+      "남은 돈 {change}원! 저금통에 넣고 다음 방과후에 보태기 🐷",
+      "남은 돈 {change}원! 다이소 꿀템 하나 사서 행운의 뽑기 하기 🎲",
+      "남은 돈 {change}원! 동전 뒤집기 해서 싹쓸이 몰아주기 🪙"
+    ];
+
+    // Sound Synthesizer via Web Audio API (Dopamine UX Enhancer)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playBeep(freq, duration, type = "sine") {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.warn("Audio context not initialized yet");
+      }
+    }
+
+    function playWheelSound() {
+      let ticks = 10;
+      for (let i = 0; i < ticks; i++) {
+        setTimeout(() => {
+          playBeep(400 + (i * 80), 0.08, "triangle");
+        }, i * 200);
+      }
+    }
+
+    function playSuccessSound() {
+      setTimeout(() => playBeep(523.25, 0.15), 0);   // C5
+      setTimeout(() => playBeep(659.25, 0.15), 100); // E5
+      setTimeout(() => playBeep(783.99, 0.15), 200); // G5
+      setTimeout(() => playBeep(1046.50, 0.4), 300); // C6
+    }
+
+    function playErrorSound() {
+      playBeep(150, 0.3, "sawtooth");
+    }
+
+    // Input States
+    let peopleCount = 3;
+    let budget = 0;
+
+    // --- NAVIGATION FLOW ---
+    function showScreen(stepId) {
+      document.getElementById('step1').classList.add('hidden');
+      document.getElementById('step2').classList.add('hidden');
+      document.getElementById('step3').classList.add('hidden');
+      document.getElementById(stepId).classList.remove('hidden');
+    }
+
+    // Step 1 -> Step 2
+    function startRoulette() {
+      const peopleInput = document.getElementById('input-people');
+      const budgetInput = document.getElementById('input-budget');
+
+      peopleCount = parseInt(peopleInput.value) || 3;
+      budget = parseInt(budgetInput.value) || 0;
+
+      if (!budgetInput.value || budget <= 0) {
+        playErrorSound();
+        alert("오늘의 소중한 예산을 입력해 줘! 💸");
+        budgetInput.focus();
+        return;
+      }
+      
+      runAnimationAndProcess();
+    }
+
+    // Roulette Spin & Transition Routine
+    function runAnimationAndProcess() {
+      showScreen('step2');
+      playWheelSound();
+      
+      const wheel = document.getElementById('wheel');
+      wheel.classList.remove('spinning');
+      void wheel.offsetWidth; // Trigger reflow to restart animation
+      wheel.classList.add('spinning');
+
+      // Course Calculation during spin
+      const course = calculateCourse(peopleCount, budget);
+
+      setTimeout(() => {
+        displayResult(course);
+        showScreen('step3');
+        playSuccessSound();
+      }, 2000);
+    }
+
+    // --- ALGORITHM: COURSE GENERATION ---
+    function calculateCourse(N, B) {
+      let bestCourse = [];
+      let maxSpent = -1;
+
+      // Make a pool of all options
+      const foods = [...FOOD_ITEMS];
+      const plays = [...PLAY_ITEMS];
+      const photos = [...PHOTO_ITEMS];
+
+      // Try random combinations 100 times to maximize fun & remaining balance optimization
+      for (let i = 0; i < 150; i++) {
+        let currentSpent = 0;
+        let selected = [];
+
+        // 1. Pick Food (Mandatory, or skip if ultra low budget)
+        const food = foods[Math.floor(Math.random() * foods.length)];
+        const foodCost = food.price * N;
+        if (currentSpent + foodCost <= B) {
+          selected.push({ ...food, total: foodCost });
+          currentSpent += foodCost;
+        }
+
+        // 2. Pick Play Activity
+        const play = plays[Math.floor(Math.random() * plays.length)];
+        const playCost = play.price * N;
+        if (currentSpent + playCost <= B) {
+          selected.push({ ...play, total: playCost });
+          currentSpent += playCost;
+        }
+
+        // 3. Pick Photo Option (50% probability to make it dynamic)
+        if (Math.random() > 0.4) {
+          const photo = photos[0];
+          const photoCost = photo.price; // Flat rate per team
+          if (currentSpent + photoCost <= B) {
+            selected.push({ ...photo, total: photoCost });
+            currentSpent += photoCost;
+          }
+        }
+
+        // Keep tracking the best course that uses most budget but does not exceed it
+        if (currentSpent <= B && currentSpent > maxSpent && selected.length >= 1) {
+          maxSpent = currentSpent;
+          bestCourse = selected;
+        }
+      }
+
+      // Fallback Strategy: If everything is too expensive for the budget
+      if (bestCourse.length === 0) {
+        // Absolute cheapest combo: Daiso (0원)
+        const freePlay = PLAY_ITEMS.find(p => p.price === 0);
+        bestCourse.push({ ...freePlay, total: 0 });
+        maxSpent = 0;
+      }
+
+      return {
+        items: bestCourse,
+        totalSpent: maxSpent,
+        change: B - maxSpent
+      };
+    }
+
+    // --- DISPLAY RESULTS ---
+    function displayResult(course) {
+      // 1. Date Formatting
+      const now = new Date();
+      const formattedDate = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      document.getElementById('receipt-date').innerText = formattedDate;
+
+      // 2. Headcount
+      document.getElementById('receipt-headcount').innerText = `인원: ${peopleCount}명`;
+
+      // 3. Course rendering
+      const container = document.getElementById('course-container');
+      container.innerHTML = '';
+
+      course.items.forEach((item, index) => {
+        const stepNum = index + 1;
+        let priceDetail = "";
+        
+        if (item.type === "per") {
+          priceDetail = `${peopleCount}명 x ${item.price.toLocaleString()}원`;
+        } else {
+          priceDetail = `1팀 x ${item.price.toLocaleString()}원`;
+        }
+
+        const itemHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-black text-slate-800">${stepNum}차: ${item.name}</p>
+              <p class="text-[11px] text-slate-400 font-bold">${priceDetail}</p>
+            </div>
+            <span class="font-bold text-slate-700">${item.total.toLocaleString()}원</span>
+          </div>
+        `;
+        container.innerHTML += itemHTML;
+      });
+
+      // 4. Summaries
+      document.getElementById('receipt-budget').innerText = `${budget.toLocaleString()}원`;
+      document.getElementById('receipt-spent').innerText = `${course.totalSpent.toLocaleString()}원`;
+      document.getElementById('receipt-change').innerText = `${course.change.toLocaleString()}원`;
+
+      // 5. Fun customized message
+      const funPhrase = document.getElementById('fun-phrase');
+      if (course.change > 0) {
+        const template = FUN_MESSAGES[Math.floor(Math.random() * FUN_MESSAGES.length)];
+        funPhrase.innerText = template.replace("{change}", course.change.toLocaleString());
+      } else {
+        funPhrase.innerText = "남은 돈 0원! 영혼까지 탈탈 털어서 알차게 놀았다! ⚡⚡";
+      }
+    }
+
+    // Reroll with current states
+    function reroll() {
+      runAnimationAndProcess();
+    }
+
+    // Go back to step 1
+    function goHome() {
+      document.getElementById('input-budget').value = '';
+      showScreen('step1');
+    }
+  </script>
+</body>
+</html>
