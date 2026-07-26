@@ -300,6 +300,11 @@ export default function EggGame() {
               {result.pinCode} <span className="text-xs text-zinc-500">📋 복사</span>
             </button>
             <p className="mt-2 text-[11px] text-zinc-500">기프트 보관함에 저장됐어요. 유효기간 내에 사용하세요!</p>
+            {result.provider && (
+              <p className="mt-1 text-[10px] font-bold text-violet">
+                🤝 {result.provider} 발급{result.providerTr ? ` · TR ${result.providerTr.slice(-8)}` : ""}
+              </p>
+            )}
             <div className="mt-5 grid grid-cols-2 gap-2">
               <Link href="/rewards" className="btn-gold">보관함 열기 🎀</Link>
               <button className="btn-ghost" onClick={() => setResult(null)}>계속 깨기 🥚</button>

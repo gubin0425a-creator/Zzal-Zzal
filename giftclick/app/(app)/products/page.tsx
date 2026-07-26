@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { api, fetcher } from "@/components/client";
 import { useToast } from "@/components/Toast";
 import { Modal, ConfirmModal, EmptyState, Spinner, CardSkeleton } from "@/components/ui";
+import GiftconPanel from "@/components/GiftconPanel";
 import type { Category, Product } from "@/lib/types";
 import { fmtKRW } from "@/lib/format";
 import { CATEGORY_LABELS, TIER_LABELS, tierOf, MAX_PRODUCT_VALUE } from "@/lib/constants";
@@ -145,6 +146,9 @@ export default function ProductsPage() {
           ＋ 새 상품 등록
         </button>
       </header>
+
+      {/* giftcon integration status */}
+      <GiftconPanel onSynced={() => mutate()} />
 
       {/* filters */}
       <div className="flex flex-wrap items-center gap-2">

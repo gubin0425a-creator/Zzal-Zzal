@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/session";
 import {
   ensureEgg, drawableProducts, drawProduct, issueReward, newEggMaxHp,
 } from "@/lib/game";
+import { getGiftconProvider } from "@/lib/giftcon";
 import { XP_PER_CLICK, XP_PER_HATCH, BONUS_CREDIT_CHANCE } from "@/lib/constants";
 import type { CrackMode } from "@/lib/types";
 
@@ -80,6 +81,44 @@ export async function POST(req: NextRequest) {
     );
 
     d.exec("COMMIT");
+
+    // ---- 기프티콘 발급사 연동 (트랜잭션 커밋 후 외부 호출) ----
+    if (hatched && rewardRow && wonProduct) {
+      const provider = getGiftconProvider();
+      try {
+        const issued = await provider.issue({
+          title: wonProduct.name,
+          value: wonProduct.value,
+          goodsCode: wonProduct.providerCode ?? null,
+          userId,
+          rewardId: (rewardRow as { id: string }).id,
+        });
+        const issueT = now();
+        d.prepare(
+          `INSERT INTO giftcon_issues (id, user_id, reward_id, provider, tr_id, coupon_num, status, raw_json, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'ISSUED', ?, ?)`,
+        ).run(
+          genId("iss"), userId, (rewardRow as { id: string }).id, provider.name,
+          issued.trId, issued.couponNum, JSON.stringify(issued.raw ?? null), issueT,
+        );
+        // 발급사가 준 실제 핀코드로 교체
+        d.prepare("UPDATE rewards SET pin_code = ?, updated_at = ? WHERE id = ?")
+          .run(issued.couponNum, issueT, (rewardRow as { id: string }).id);
+        rewardRow = d.prepare("SELECT * FROM rewards WHERE id = ?")
+          .get((rewardRow as { id: string }).id)!;
+        (rewardRow as Record<string, unknown>).issue_provider = provider.name;
+        (rewardRow as Record<string, unknown>).issue_tr = issued.trId;
+      } catch (e) {
+        // 발급 실패 → 로컬 핀 유지 + 실패 이력 기록 (사용자 경험은 중단하지 않음)
+        d.prepare(
+          `INSERT INTO giftcon_issues (id, user_id, reward_id, provider, tr_id, coupon_num, status, raw_json, created_at)
+           VALUES (?, ?, ?, ?, NULL, NULL, 'FAILED', ?, ?)`,
+        ).run(
+          genId("iss"), userId, (rewardRow as { id: string }).id, provider.name,
+          JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), now(),
+        );
+      }
+    }
 
     const eggAfter = ensureEgg(userId);
     const user = toUser(d.prepare("SELECT * FROM users WHERE id = ?").get(userId));

@@ -13,9 +13,18 @@ export async function GET(req: NextRequest) {
   expireStaleRewards(auth.user.id);
   const status = new URL(req.url).searchParams.get("status");
   const d = db();
+  // 최근 발급 이력과 조인해서 발급사 정보를 함께 반환
+  const baseSql = `
+    SELECT r.*, i.provider AS issue_provider, i.tr_id AS issue_tr
+    FROM rewards r
+    LEFT JOIN giftcon_issues i ON i.id = (
+      SELECT x.id FROM giftcon_issues x
+      WHERE x.reward_id = r.id AND x.status = 'ISSUED'
+      ORDER BY x.created_at DESC LIMIT 1
+    )`;
   const items = (status && ["READY", "USED", "EXPIRED"].includes(status)
-    ? d.prepare("SELECT * FROM rewards WHERE user_id = ? AND status = ? ORDER BY created_at DESC").all(auth.user.id, status)
-    : d.prepare("SELECT * FROM rewards WHERE user_id = ? ORDER BY created_at DESC").all(auth.user.id)
+    ? d.prepare(`${baseSql} WHERE r.user_id = ? AND r.status = ? ORDER BY r.created_at DESC`).all(auth.user.id, status)
+    : d.prepare(`${baseSql} WHERE r.user_id = ? ORDER BY r.created_at DESC`).all(auth.user.id)
   ).map(toReward);
   return NextResponse.json({ items });
 }

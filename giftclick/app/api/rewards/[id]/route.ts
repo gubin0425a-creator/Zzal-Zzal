@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, now, toReward } from "@/lib/db";
 import { requireAuth, badRequest } from "@/lib/session";
+import { getGiftconProvider } from "@/lib/giftcon";
 
 export const dynamic = "force-dynamic";
 
@@ -69,9 +70,27 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuth();
   if ("response" in auth) return auth.response;
   const { id } = await ctx.params;
-  const res = db()
-    .prepare("DELETE FROM rewards WHERE id = ? AND user_id = ?")
-    .run(id, auth.user.id);
+  const d = db();
+
+  // 발급사에 실제 발급된 쿠폰이 있으면 회수(취소) 시도 — best effort
+  const issue = d
+    .prepare(
+      `SELECT * FROM giftcon_issues WHERE reward_id = ? AND status = 'ISSUED'
+       ORDER BY created_at DESC LIMIT 1`,
+    )
+    .get(id) as { id: string; tr_id: string | null } | undefined;
+  if (issue?.tr_id) {
+    try {
+      const provider = getGiftconProvider();
+      const cancelled = await provider.cancel(String(issue.tr_id));
+      d.prepare("UPDATE giftcon_issues SET status = ? WHERE id = ?")
+        .run(cancelled ? "CANCELED" : "CANCEL_FAILED", issue.id);
+    } catch {
+      d.prepare("UPDATE giftcon_issues SET status = 'CANCEL_FAILED' WHERE id = ?").run(issue.id);
+    }
+  }
+
+  const res = d.prepare("DELETE FROM rewards WHERE id = ? AND user_id = ?").run(id, auth.user.id);
   if (res.changes === 0) return badRequest("기프트를 찾을 수 없습니다.");
   return NextResponse.json({ ok: true });
 }

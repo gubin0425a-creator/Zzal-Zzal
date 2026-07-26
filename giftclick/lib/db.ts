@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS products (
   weight REAL NOT NULL DEFAULT 10,
   stock INTEGER NOT NULL DEFAULT -1,
   active INTEGER NOT NULL DEFAULT 1,
+  provider_code TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -104,7 +105,33 @@ CREATE TABLE IF NOT EXISTS rewards (
 );
 CREATE INDEX IF NOT EXISTS idx_cracks_user ON cracks(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_rewards_user ON rewards(user_id, created_at DESC);
+-- 기프티콘 발급사 연동 원장(발급/취소 이력)
+CREATE TABLE IF NOT EXISTS giftcon_issues (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reward_id TEXT REFERENCES rewards(id) ON DELETE SET NULL,
+  provider TEXT NOT NULL,
+  tr_id TEXT,
+  coupon_num TEXT,
+  status TEXT NOT NULL DEFAULT 'ISSUED',
+  raw_json TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_issues_reward ON giftcon_issues(reward_id);
+-- 간단한 설정/상태 KV (마지막 동기화 등)
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
 `;
+
+/** 기존 DB 파일에 신규 컬럼을 안전하게 추가 */
+function ensureColumn(d: DB, table: string, column: string, ddl: string) {
+  const cols = d.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some((c) => c.name === column)) {
+    d.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+  }
+}
 
 function open(): DB {
   fs.mkdirSync(DB_DIR, { recursive: true });
@@ -112,7 +139,20 @@ function open(): DB {
   db.exec("PRAGMA journal_mode=WAL;");
   db.exec("PRAGMA foreign_keys=ON;");
   db.exec(SCHEMA);
+  // 스키마 이후 도입된 컬럼들 (이미 존재하면 스킵)
+  ensureColumn(db, "products", "provider_code", "provider_code TEXT");
   return db;
+}
+
+export function getMeta(key: string): string | null {
+  const row = db().prepare("SELECT value FROM meta WHERE key = ?").get(key);
+  return row ? String(row.value) : null;
+}
+
+export function setMeta(key: string, value: string) {
+  db()
+    .prepare("INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+    .run(key, value);
 }
 
 declare global {
@@ -164,6 +204,7 @@ export function toProduct(r: any): Product {
     weight: r.weight,
     stock: r.stock,
     active: !!r.active,
+    providerCode: r.provider_code ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -184,6 +225,8 @@ export function toReward(r: any): Reward {
     memo: r.memo,
     expiresAt: r.expires_at,
     usedAt: r.used_at,
+    provider: r.issue_provider ?? null,
+    providerTr: r.issue_tr ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

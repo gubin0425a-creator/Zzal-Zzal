@@ -40,6 +40,8 @@ export interface Product {
   weight: number;
   stock: number; // -1 = unlimited
   active: boolean;
+  /** 기프티콘 발급사 상품 코드(카탈로그 동기화 시 채워짐) */
+  providerCode?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +59,10 @@ export interface Reward {
   memo: string;
   expiresAt: string;
   usedAt: string | null;
+  /** 발급사 ("기프티엘", "기프티엘 샌드박스", null = 수동 등록) */
+  provider?: string | null;
+  /** 발급사 거래번호 */
+  providerTr?: string | null;
   createdAt: string;
   updatedAt: string;
 }

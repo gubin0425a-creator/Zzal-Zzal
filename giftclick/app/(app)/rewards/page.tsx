@@ -194,6 +194,12 @@ export default function RewardsPage() {
                 >
                   {revealed ? `${r.pinCode}  📋` : "👀 눌러서 핀코드 보기"}
                 </button>
+                <div className="flex items-center justify-between text-[10px] font-bold">
+                  <span className={r.provider ? "text-violet" : "text-zinc-600"}>
+                    {r.provider ? `🤝 ${r.provider} 발급` : "✍️ 로컬 발급"}
+                  </span>
+                  {r.providerTr && <span className="font-mono text-zinc-600">TR {r.providerTr.slice(-8)}</span>}
+                </div>
 
                 <div className="flex items-center justify-between text-[11px] font-bold">
                   <span className="text-zinc-500">{fmtDate(r.expiresAt)} 까지</span>
