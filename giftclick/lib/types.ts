@@ -1,0 +1,111 @@
+export type Role = "USER" | "ADMIN";
+export type CrackMode = "MANUAL" | "AUTO";
+export type RewardStatus = "READY" | "USED" | "EXPIRED";
+export type Category =
+  | "COFFEE"
+  | "FOOD"
+  | "CONVENIENCE"
+  | "CULTURE"
+  | "BEAUTY"
+  | "ETC";
+
+export interface UserPublic {
+  id: string;
+  email: string;
+  name: string;
+  nickname: string | null;
+  avatar: string;
+  role: Role;
+  xp: number;
+  credits: number;
+  level: number;
+  createdAt: string;
+}
+
+export interface EggState {
+  hp: number;
+  maxHp: number;
+  cycle: number;
+  totalClicks: number;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  brand: string;
+  category: Category;
+  description: string;
+  emoji: string;
+  value: number;
+  weight: number;
+  stock: number; // -1 = unlimited
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Reward {
+  id: string;
+  userId: string;
+  productId: string | null;
+  title: string;
+  brand: string;
+  emoji: string;
+  value: number;
+  pinCode: string;
+  status: RewardStatus;
+  memo: string;
+  expiresAt: string;
+  usedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Crack {
+  id: string;
+  userId: string;
+  productId: string | null;
+  productName: string | null;
+  productEmoji: string | null;
+  productValue: number | null;
+  mode: CrackMode;
+  hatched: boolean;
+  xp: number;
+  createdAt: string;
+}
+
+export interface CrackResult {
+  credits: number;
+  xp: number;
+  egg: EggState;
+  hatched: boolean;
+  bonusCredit: boolean;
+  reward?: Reward;
+  error?: string;
+}
+
+export interface LeaderRow {
+  nickname: string;
+  avatar: string;
+  xp: number;
+  level: number;
+}
+
+export interface StatsPayload {
+  user: UserPublic;
+  egg: EggState;
+  totals: {
+    cracks: number;
+    eggsHatched: number;
+    totalValue: number;
+    ready: number;
+    used: number;
+    expired: number;
+    products: number;
+  };
+  streakDays: number;
+  weekly: { day: string; label: string; count: number }[];
+  recentRewards: Reward[];
+  topWin: Reward | null;
+  leaderboard: LeaderRow[];
+}
