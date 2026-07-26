@@ -141,6 +141,7 @@ function open(): DB {
   db.exec(SCHEMA);
   // 스키마 이후 도입된 컬럼들 (이미 존재하면 스킵)
   ensureColumn(db, "products", "provider_code", "provider_code TEXT");
+  ensureColumn(db, "giftcon_issues", "method", "method TEXT");
   return db;
 }
 
@@ -227,6 +228,7 @@ export function toReward(r: any): Reward {
     usedAt: r.used_at,
     provider: r.issue_provider ?? null,
     providerTr: r.issue_tr ?? null,
+    providerStatus: r.issue_status ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

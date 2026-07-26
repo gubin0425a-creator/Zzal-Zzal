@@ -11,7 +11,7 @@ interface GiftconStatus {
   provider: { name: string; mode: "sandbox" | "live"; ready: boolean };
   lastSyncAt: string | null;
   goodsSynced: number;
-  issues: { issued: number; failed: number; canceled: number };
+  issues: { issued: number; pending: number; failed: number; canceled: number };
 }
 
 export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
@@ -47,6 +47,7 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
   }
 
   const { provider, lastSyncAt, goodsSynced, issues } = data;
+  const isManual = provider.name.includes("수동");
 
   return (
     <section className={`card overflow-hidden ${provider.mode === "live" && !provider.ready ? "border-pink/50" : ""}`}>
@@ -59,6 +60,8 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
             <h3 className="text-sm font-black text-white">기프티콘 발급 연동</h3>
             {provider.mode === "sandbox" ? (
               <span className="chip border border-violet/40 bg-violet/15 text-violet">🧪 샌드박스 모드</span>
+            ) : isManual ? (
+              <span className="chip border border-gold/40 bg-gold/15 text-gold">🙌 직접 전달 모드</span>
             ) : provider.ready ? (
               <span className="chip border border-mint/40 bg-mint/15 text-mint">✅ 실전 연동</span>
             ) : (
@@ -74,12 +77,15 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
         <div className="flex items-center gap-2">
           <div className="hidden gap-3 text-[11px] font-bold text-zinc-500 sm:flex">
             <span>발급 <b className="text-mint">{issues.issued}</b></span>
+            <span>발송대기 <b className={issues.pending ? "text-gold" : ""}>{issues.pending}</b></span>
             <span>실패 <b className={issues.failed ? "text-pink" : ""}>{issues.failed}</b></span>
             <span>회수 <b className="text-zinc-300">{issues.canceled}</b></span>
           </div>
-          <button className="btn-ghost text-xs" onClick={sync} disabled={busy}>
-            {busy && <Spinner className="h-3.5 w-3.5" />} 🔄 카탈로그 동기화
-          </button>
+          {!isManual && (
+            <button className="btn-ghost text-xs" onClick={sync} disabled={busy}>
+              {busy && <Spinner className="h-3.5 w-3.5" />} 🔄 카탈로그 동기화
+            </button>
+          )}
         </div>
       </div>
       {provider.mode === "live" && !provider.ready && (
@@ -87,6 +93,12 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
           실전 모드인데 키가 없어요. <code className="rounded bg-ink px-1 py-0.5">giftclick/.env</code>에
           <b> GIFTIEL_API_KEY</b>, <b>GIFTIEL_PARTNER_CODE</b> 등을 넣고 서버를 재시작하세요.
           그동안은 발급이 실패필드로 기록되고 로컬 핀이 대신 사용됩니다.
+        </div>
+      )}
+      {isManual && (
+        <div className="border-t border-gold/30 bg-gold/5 px-4 py-2 text-[11px] text-zinc-400 sm:px-5">
+          🙌 당첨 시 <b>발송 대기</b>가 쌓이고, <b>관리자 메뉴의 📦 발송 관리</b>에서 카톡 선물하기/토스 송금 등으로
+          직접 전달한 뒤 완료 처리하세요. 사업자 없이 운영 가능한 학생 개발자 방식이에요.
         </div>
       )}
       {provider.mode === "sandbox" && (

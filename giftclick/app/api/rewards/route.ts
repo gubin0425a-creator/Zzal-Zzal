@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
   const d = db();
   // 최근 발급 이력과 조인해서 발급사 정보를 함께 반환
   const baseSql = `
-    SELECT r.*, i.provider AS issue_provider, i.tr_id AS issue_tr
+    SELECT r.*, i.provider AS issue_provider, i.tr_id AS issue_tr, i.status AS issue_status
     FROM rewards r
     LEFT JOIN giftcon_issues i ON i.id = (
       SELECT x.id FROM giftcon_issues x
-      WHERE x.reward_id = r.id AND x.status = 'ISSUED'
+      WHERE x.reward_id = r.id AND x.status != 'FAILED'
       ORDER BY x.created_at DESC LIMIT 1
     )`;
   const items = (status && ["READY", "USED", "EXPIRED"].includes(status)

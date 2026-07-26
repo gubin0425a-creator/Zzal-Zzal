@@ -19,6 +19,8 @@ const NAV = [
   { href: "/profile", label: "내 정보", icon: "👤" },
 ];
 
+const ADMIN_NAV = { href: "/fulfillment", label: "발송 관리", icon: "📦" };
+
 function Logo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-2.5">
@@ -62,11 +64,12 @@ function UserCard({ user }: { user: UserPublic }) {
   );
 }
 
-function NavList({ onNavigate }: { onNavigate?: () => void }) {
+function NavList({ onNavigate, isAdmin }: { onNavigate?: () => void; isAdmin?: boolean }) {
   const pathname = usePathname();
+  const items = isAdmin ? [...NAV.slice(0, 5), ADMIN_NAV, NAV[5]] : NAV;
   return (
     <nav className="flex flex-col gap-1">
-      {NAV.map((n) => {
+      {items.map((n) => {
         const active = pathname.startsWith(n.href);
         return (
           <Link
@@ -135,7 +138,7 @@ function Shell({ initialUser, children }: { initialUser: UserPublic; children: R
             깨러가기
           </Link>
         </div>
-        <NavList />
+        <NavList isAdmin={user.role === "ADMIN"} />
         <div className="mt-auto space-y-2.5">
           <UserCard user={user} />
           <LogoutButton />
@@ -173,7 +176,7 @@ function Shell({ initialUser, children }: { initialUser: UserPublic; children: R
               <Logo />
               <button onClick={() => setDrawer(false)} className="cursor-pointer p-2 text-zinc-400" aria-label="메뉴 닫기">✕</button>
             </div>
-            <NavList onNavigate={() => setDrawer(false)} />
+            <NavList onNavigate={() => setDrawer(false)} isAdmin={user.role === "ADMIN"} />
             <div className="mt-auto space-y-2.5">
               <UserCard user={user} />
               <LogoutButton />

@@ -23,6 +23,7 @@ export async function GET() {
     goodsSynced,
     issues: {
       issued: count("ISSUED"),
+      pending: count("PENDING"),
       failed: count("FAILED"),
       canceled: count("CANCELED"),
     },

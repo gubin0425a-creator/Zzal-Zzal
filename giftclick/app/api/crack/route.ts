@@ -94,20 +94,26 @@ export async function POST(req: NextRequest) {
           rewardId: (rewardRow as { id: string }).id,
         });
         const issueT = now();
+        // 쿠폰번호가 있으면 즉시 발급(ISSUED), 없으면 수동 발송 모드의 "발송 대기(PENDING)"
+        const issueStatus = issued.couponNum ? "ISSUED" : "PENDING";
         d.prepare(
           `INSERT INTO giftcon_issues (id, user_id, reward_id, provider, tr_id, coupon_num, status, raw_json, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, 'ISSUED', ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).run(
           genId("iss"), userId, (rewardRow as { id: string }).id, provider.name,
-          issued.trId, issued.couponNum, JSON.stringify(issued.raw ?? null), issueT,
+          issued.trId, issued.couponNum || null, issueStatus,
+          JSON.stringify(issued.raw ?? null), issueT,
         );
-        // 발급사가 준 실제 핀코드로 교체
-        d.prepare("UPDATE rewards SET pin_code = ?, updated_at = ? WHERE id = ?")
-          .run(issued.couponNum, issueT, (rewardRow as { id: string }).id);
+        // 발급사가 준 실제 핀코드가 있을 때만 교체 (수동 모드는 발송 완료 시 등록됨)
+        if (issued.couponNum) {
+          d.prepare("UPDATE rewards SET pin_code = ?, updated_at = ? WHERE id = ?")
+            .run(issued.couponNum, issueT, (rewardRow as { id: string }).id);
+        }
         rewardRow = d.prepare("SELECT * FROM rewards WHERE id = ?")
           .get((rewardRow as { id: string }).id)!;
         (rewardRow as Record<string, unknown>).issue_provider = provider.name;
         (rewardRow as Record<string, unknown>).issue_tr = issued.trId;
+        (rewardRow as Record<string, unknown>).issue_status = issueStatus;
       } catch (e) {
         // 발급 실패 → 로컬 핀 유지 + 실패 이력 기록 (사용자 경험은 중단하지 않음)
         d.prepare(

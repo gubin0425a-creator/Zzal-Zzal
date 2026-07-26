@@ -1,4 +1,5 @@
 import { GiftielProvider } from "./giftiel";
+import { ManualFulfillmentProvider } from "./manual";
 import { SandboxGiftconProvider } from "./sandbox";
 import type { GiftconProvider } from "./provider";
 
@@ -11,15 +12,19 @@ declare global {
 
 /**
  * 프로바이더 선택:
- * - GIFTCON_PROVIDER=giftiel  → 기프티엘 실전 (키가 있어야 발급 성공)
+ * - GIFTCON_PROVIDER=giftiel → 기프티엘 실전 (파트너 키 필요)
+ * - GIFTCON_PROVIDER=manual  → 수동 발송(직접 전달) — 학생 개발자가 사업자 없이 실제 운영 가능
  * - 그 외/미설정             → 샌드박스 (키 없이도 동일 플로우 재현)
  */
 export function getGiftconProvider(): GiftconProvider {
   if (!globalThis.__GC_GIFTCON) {
+    const kind = process.env.GIFTCON_PROVIDER;
     globalThis.__GC_GIFTCON =
-      process.env.GIFTCON_PROVIDER === "giftiel"
+      kind === "giftiel"
         ? new GiftielProvider()
-        : new SandboxGiftconProvider();
+        : kind === "manual"
+          ? new ManualFulfillmentProvider()
+          : new SandboxGiftconProvider();
   }
   return globalThis.__GC_GIFTCON;
 }

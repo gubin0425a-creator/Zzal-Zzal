@@ -63,6 +63,8 @@ export interface Reward {
   provider?: string | null;
   /** 발급사 거래번호 */
   providerTr?: string | null;
+  /** 발급 상태 (ISSUED / PENDING / CANCELED) */
+  providerStatus?: string | null;
   createdAt: string;
   updatedAt: string;
 }
