@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db, now, toUser } from "@/lib/db";
 import { requireAuth, badRequest, clearSessionCookie } from "@/lib/session";
 import { AVATARS } from "@/lib/constants";
+import { EMAIL_RE } from "@/lib/validate";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,13 @@ export async function PATCH(req: NextRequest) {
     const nickname = String(body.nickname).trim().slice(0, 16);
     d.prepare("UPDATE users SET nickname = ?, updated_at = ? WHERE id = ?").run(
       nickname || null, now(), user.id,
+    );
+  }
+  if (body.payoutEmail !== undefined) {
+    const email = String(body.payoutEmail).trim().toLowerCase();
+    if (email && !EMAIL_RE.test(email)) return badRequest("이메일 형식이 올바르지 않습니다.");
+    d.prepare("UPDATE users SET payout_email = ?, updated_at = ? WHERE id = ?").run(
+      email || null, now(), user.id,
     );
   }
   if (body.avatar !== undefined) {

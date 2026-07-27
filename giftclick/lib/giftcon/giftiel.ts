@@ -27,6 +27,7 @@ const TIMEOUT_MS = 8000;
 export class GiftielProvider implements GiftconProvider {
   name = "기프티엘";
   mode = "live" as const;
+  readonly failurePolicy = "failed" as const;
 
   private base = process.env.GIFTIEL_API_BASE || "https://open-api.giftiel.com";
   private key = process.env.GIFTIEL_API_KEY || "";

@@ -92,10 +92,12 @@ export async function POST(req: NextRequest) {
           goodsCode: wonProduct.providerCode ?? null,
           userId,
           rewardId: (rewardRow as { id: string }).id,
+          payoutEmail: u.payout_email ?? null,
         });
         const issueT = now();
-        // 쿠폰번호가 있으면 즉시 발급(ISSUED), 없으면 수동 발송 모드의 "발송 대기(PENDING)"
-        const issueStatus = issued.couponNum ? "ISSUED" : "PENDING";
+        // 쿠폰번호 또는 완결(completed, 자동 송금)이면 즉시 발급(ISSUED),
+        // 아니면 수동 발송 모드의 "발송 대기(PENDING)"
+        const issueStatus = issued.couponNum || issued.completed ? "ISSUED" : "PENDING";
         d.prepare(
           `INSERT INTO giftcon_issues (id, user_id, reward_id, provider, tr_id, coupon_num, status, raw_json, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -115,14 +117,19 @@ export async function POST(req: NextRequest) {
         (rewardRow as Record<string, unknown>).issue_tr = issued.trId;
         (rewardRow as Record<string, unknown>).issue_status = issueStatus;
       } catch (e) {
-        // 발급 실패 → 로컬 핀 유지 + 실패 이력 기록 (사용자 경험은 중단하지 않음)
+        // 발급 실패 → 프로바이더 정책에 따라 수동 발송 큐(PENDING)로 넘기거나 실패 이력만 기록
+        const failStatus = provider.failurePolicy === "pending" ? "PENDING" : "FAILED";
         d.prepare(
           `INSERT INTO giftcon_issues (id, user_id, reward_id, provider, tr_id, coupon_num, status, raw_json, created_at)
-           VALUES (?, ?, ?, ?, NULL, NULL, 'FAILED', ?, ?)`,
+           VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?)`,
         ).run(
-          genId("iss"), userId, (rewardRow as { id: string }).id, provider.name,
-          JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), now(),
+          genId("iss"), userId, (rewardRow as { id: string }).id, provider.name, failStatus,
+          JSON.stringify({ error: e instanceof Error ? e.message : String(e), fallback: failStatus }), now(),
         );
+        if (failStatus === "PENDING") {
+          (rewardRow as Record<string, unknown>).issue_provider = provider.name;
+          (rewardRow as Record<string, unknown>).issue_status = "PENDING";
+        }
       }
     }
 

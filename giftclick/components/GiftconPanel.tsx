@@ -48,6 +48,7 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
 
   const { provider, lastSyncAt, goodsSynced, issues } = data;
   const isManual = provider.name.includes("수동");
+  const isPayPal = provider.name.includes("PayPal");
 
   return (
     <section className={`card overflow-hidden ${provider.mode === "live" && !provider.ready ? "border-pink/50" : ""}`}>
@@ -63,7 +64,9 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
             ) : isManual ? (
               <span className="chip border border-gold/40 bg-gold/15 text-gold">🙌 직접 전달 모드</span>
             ) : provider.ready ? (
-              <span className="chip border border-mint/40 bg-mint/15 text-mint">✅ 실전 연동</span>
+              <span className="chip border border-mint/40 bg-mint/15 text-mint">
+                {isPayPal ? "💸 자동 송금 ON" : "✅ 실전 연동"}
+              </span>
             ) : (
               <span className="chip border border-pink/40 bg-pink/15 text-pink">⚠️ 키 설정 필요</span>
             )}
@@ -81,7 +84,7 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
             <span>실패 <b className={issues.failed ? "text-pink" : ""}>{issues.failed}</b></span>
             <span>회수 <b className="text-zinc-300">{issues.canceled}</b></span>
           </div>
-          {!isManual && (
+          {!isManual && !isPayPal && (
             <button className="btn-ghost text-xs" onClick={sync} disabled={busy}>
               {busy && <Spinner className="h-3.5 w-3.5" />} 🔄 카탈로그 동기화
             </button>
@@ -93,6 +96,12 @@ export default function GiftconPanel({ onSynced }: { onSynced?: () => void }) {
           실전 모드인데 키가 없어요. <code className="rounded bg-ink px-1 py-0.5">giftclick/.env</code>에
           <b> GIFTIEL_API_KEY</b>, <b>GIFTIEL_PARTNER_CODE</b> 등을 넣고 서버를 재시작하세요.
           그동안은 발급이 실패필드로 기록되고 로컬 핀이 대신 사용됩니다.
+        </div>
+      )}
+      {isPayPal && (
+        <div className="border-t border-line/60 bg-ink-2/40 px-4 py-2 text-[11px] text-zinc-500 sm:px-5">
+          💸 당첨과 동시에 당첨자의 PayPal 계정으로 자동 송금돼요. 당첨자는 프로필에서 PayPal 이메일을
+          등록해야 하고, 미등록/실패 시 자동으로 수동 발송 큐로 넘겨 안전하게 처리됩니다.
         </div>
       )}
       {isManual && (

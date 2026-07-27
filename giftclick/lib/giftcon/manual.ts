@@ -22,6 +22,7 @@ function rand(n: number): string {
 export class ManualFulfillmentProvider implements GiftconProvider {
   name = "수동 발송(직접 전달)";
   mode = "live" as const;
+  readonly failurePolicy = "pending" as const;
 
   isReady() {
     // 별도 키 불필요 — 운영 준비 완료 상태로 항상 표시
@@ -35,6 +36,7 @@ export class ManualFulfillmentProvider implements GiftconProvider {
       // 쿠폰번호가 비어 있으면 "발송 대기(PENDING)"로 기록되고 로컬 핀이 임시로 유지됩니다.
       couponNum: "",
       raw: { ref: trId, note: "직접 전달 대기", value: input.value, title: input.title },
+      completed: false,
     };
   }
 

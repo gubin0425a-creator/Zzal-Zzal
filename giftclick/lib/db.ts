@@ -142,6 +142,7 @@ function open(): DB {
   // 스키마 이후 도입된 컬럼들 (이미 존재하면 스킵)
   ensureColumn(db, "products", "provider_code", "provider_code TEXT");
   ensureColumn(db, "giftcon_issues", "method", "method TEXT");
+  ensureColumn(db, "users", "payout_email", "payout_email TEXT");
   return db;
 }
 
@@ -179,6 +180,7 @@ export function toUser(r: any): UserPublic {
     name: r.name,
     nickname: r.nickname ?? null,
     avatar: r.avatar || "🐣",
+    payoutEmail: r.payout_email ?? null,
     role: r.role,
     xp: r.xp,
     credits: r.credits,

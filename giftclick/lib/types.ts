@@ -15,6 +15,8 @@ export interface UserPublic {
   name: string;
   nickname: string | null;
   avatar: string;
+  /** PayPal 자동 송금 모드에서 송금 받을 이메일 */
+  payoutEmail?: string | null;
   role: Role;
   xp: number;
   credits: number;

@@ -24,6 +24,7 @@ const ALNUM = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export class SandboxGiftconProvider implements GiftconProvider {
   name = "기프티엘 샌드박스";
   mode = "sandbox" as const;
+  readonly failurePolicy = "failed" as const;
 
   isReady() {
     return true;

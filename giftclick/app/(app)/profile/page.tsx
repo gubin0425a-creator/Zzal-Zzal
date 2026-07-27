@@ -10,11 +10,20 @@ import type { UserPublic } from "@/lib/types";
 import { fmtDate, fmtNum } from "@/lib/format";
 import { AVATARS } from "@/lib/constants";
 
+interface GiftconStatusLite {
+  provider: { name: string; mode: string; ready: boolean };
+}
+
 export default function ProfilePage() {
   const { push } = useToast();
   const router = useRouter();
   const { data, mutate } = useSWR<{ user: UserPublic }>("/api/auth/me", fetcher);
+  const { data: gcStatus } = useSWR<GiftconStatusLite>("/api/giftcon/status", fetcher);
   const user = data?.user;
+  const isPayPalMode = !!gcStatus?.provider.name.includes("PayPal");
+
+  const [payoutEmail, setPayoutEmail] = useState("");
+  const [payoutBusy, setPayoutBusy] = useState(false);
 
   const [name, setName] = useState<string | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
@@ -203,6 +212,48 @@ export default function ProfilePage() {
               </div>
             </form>
           </section>
+
+          {/* PayPal 수령 이메일 — 자동 송금 모드에서만 표시 */}
+          {isPayPalMode && (
+            <section className="card p-6">
+              <h2 className="text-sm font-black text-white">💸 PayPal 수령 이메일</h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                당첨 시 이 이메일의 PayPal 계정으로 자동 송금돼요.
+                PayPal 계정은 만 18세 이상만 만들 수 있으니, 없다면 부모님 계정을 상의해서 쓰세요.
+              </p>
+              <form
+                className="mt-4 flex gap-2"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (payoutBusy) return;
+                  setPayoutBusy(true);
+                  try {
+                    const res = await api<{ user: UserPublic }>("/api/profile", {
+                      method: "PATCH",
+                      body: { payoutEmail },
+                    });
+                    mutate({ user: res.user }, { revalidate: false });
+                    push("PayPal 이메일을 저장했어요 💸", "success");
+                  } catch (err) {
+                    push(err instanceof Error ? err.message : "저장에 실패했어요.", "error");
+                  } finally {
+                    setPayoutBusy(false);
+                  }
+                }}
+              >
+                <input
+                  type="email"
+                  className="input flex-1"
+                  placeholder="you@paypal.com"
+                  value={payoutEmail || (user.payoutEmail ?? "")}
+                  onChange={(e) => setPayoutEmail(e.target.value)}
+                />
+                <button type="submit" className="btn-gold" disabled={payoutBusy}>
+                  {payoutBusy && <Spinner className="h-4 w-4" />} 저장
+                </button>
+              </form>
+            </section>
+          )}
 
           {/* danger zone */}
           <section className="rounded-2xl border border-pink/40 bg-pink/5 p-6">
