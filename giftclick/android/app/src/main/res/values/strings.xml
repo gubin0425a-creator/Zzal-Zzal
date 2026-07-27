@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">기프트클릭</string>
+    <string name="title_activity_main">기프트클릭</string>
+    <string name="package_name">com.giftclick.app</string>
+    <string name="custom_url_scheme">com.giftclick.app</string>
+</resources>

@@ -3,7 +3,12 @@ import { verifySessionToken } from "@/lib/jwt";
 import { COOKIE_NAME } from "@/lib/constants";
 
 const PUBLIC_PAGES = ["/login", "/signup"];
-const PUBLIC_API = ["/api/auth/login", "/api/auth/signup"];
+const PUBLIC_API = [
+  "/api/auth/login",
+  "/api/auth/signup",
+  // 구글 AdMob SSV 콜백 — 구글 서버가 세션 없이 호출 (서명으로 신원 검증)
+  "/api/ads/ssv",
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

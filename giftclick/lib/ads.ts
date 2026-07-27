@@ -112,8 +112,9 @@ export type GrantResult =
     }
   | { ok: false; error: string; status: number };
 
-/** 광고 시청 완료 → 깨기권 지급 + 원장 기록 (쿨타임/일일 한도는 서버가 강제) */
-export function grantAdReward(uid: string): GrantResult {
+/** 광고 시청 완료 → 깨기권 지급 + 원장 기록 (쿨타임/일일 한도는 서버가 강제)
+ *  fixedId: SSV처럼 외부 트랜잭션 ID를 PK로 박아 중복 지급을 막을 때 사용 */
+export function grantAdReward(uid: string, fixedId?: string, providerOverride?: string): GrantResult {
   const d = db();
   const cfg = adsConfig();
 
@@ -145,16 +146,23 @@ export function grantAdReward(uid: string): GrantResult {
   }
 
   const est = estPerViewCents();
-  d.prepare(
-    "INSERT INTO ad_views (id, user_id, provider, credits_granted, est_cents, created_at) VALUES (?,?,?,?,?,?)",
-  ).run(
-    genId("adv"),
-    uid,
-    cfg.bannerReady ? "Google AdSense" : "테스트 광고",
-    cfg.rewardCredits,
-    est,
-    now(),
-  );
+  try {
+    d.prepare(
+      "INSERT INTO ad_views (id, user_id, provider, credits_granted, est_cents, created_at) VALUES (?,?,?,?,?,?)",
+    ).run(
+      fixedId ?? genId("adv"),
+      uid,
+      providerOverride ?? (cfg.bannerReady ? "Google AdSense" : "테스트 광고"),
+      cfg.rewardCredits,
+      est,
+      now(),
+    );
+  } catch (e) {
+    if (String(e).includes("UNIQUE")) {
+      return { ok: false, status: 409, error: "이미 지급된 시청(트랜잭션)이에요." };
+    }
+    throw e;
+  }
   d.prepare("UPDATE users SET credits = credits + ?, updated_at = ? WHERE id = ?").run(
     cfg.rewardCredits,
     now(),

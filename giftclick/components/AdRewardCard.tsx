@@ -6,6 +6,7 @@ import { api, fetcher } from "./client";
 import { useToast } from "./Toast";
 import { Modal, Spinner } from "./ui";
 import { fmtEstWon } from "@/lib/format";
+import { nativeAdsAvailable, playNativeRewarded, ssvActive } from "./nativeAds";
 import type { AdCompleteResult, AdsStatus } from "@/lib/types";
 
 /** 샌드박스 테스트 광고 소재 (실제 수익 미발생 — 실전은 NEXT_PUBLIC_ADSENSE_* 설정) */
@@ -28,6 +29,7 @@ export default function AdRewardCard() {
   const [claiming, setClaiming] = useState(false);
   const [cool, setCool] = useState(0);
   const [creative, setCreative] = useState(MOCK_ADS[0]);
+  const [nativeBusy, setNativeBusy] = useState(false);
 
   // 서버 쿨타임을 로컬 초 카운터로 이어받기
   useEffect(() => {
@@ -52,8 +54,43 @@ export default function AdRewardCard() {
   const ready = !!data && !exhausted && cool <= 0;
   const mockSec = useMemo(() => data?.mockAdSec ?? 5, [data?.mockAdSec]);
 
-  function startAd() {
+  async function startAd() {
     if (!ready) return;
+
+    // 안드로이드 앱(네이티브) 환경이면: 진짜 AdMob 보상형 광고 재생
+    if (nativeAdsAvailable()) {
+      setNativeBusy(true);
+      try {
+        const me = await api<{ user: { id: string } }>("/api/auth/me").catch(() => null);
+        const uid = me?.user.id;
+        if (!uid) throw new Error("로그인 정보를 불러오지 못했어요.");
+        const res = await playNativeRewarded(uid);
+        if (res.kind === "rewarded") {
+          if (ssvActive()) {
+            // 프로덕션: 구글이 서버(SSV)로 지급을 직접 호출 — 클라는 상태만 새로고침
+            push("보상 지급을 확인하고 있어요… 🛰️", "info");
+            await new Promise((r) => setTimeout(r, 2500));
+            await mutate();
+            globalMutate("/api/auth/me");
+            globalMutate("/api/stats");
+          } else {
+            await claim();
+          }
+          return;
+        }
+        if (res.kind === "dismissed") {
+          push("광고를 끝까지 봐야 보상이 나와요 👀", "info");
+          return;
+        }
+        push("진짜 광고가 아직 준비되지 않아 테스트 광고로 대체해요.", "info");
+      } catch {
+        push("광고 준비 중 오류 — 테스트 광고로 대체해요.", "info");
+      } finally {
+        setNativeBusy(false);
+      }
+    }
+
+    // 브라우저/테스트: 샌드박스 모의 광고
     setCreative(MOCK_ADS[Math.floor(Math.random() * MOCK_ADS.length)]);
     setLeft(mockSec);
     setOpen(true);
@@ -125,11 +162,16 @@ export default function AdRewardCard() {
 
       <button
         className={`mt-3.5 w-full ${ready ? "btn-gold" : "btn-ghost opacity-70"}`}
-        onClick={startAd}
-        disabled={!ready}
+        onClick={() => void startAd()}
+        disabled={!ready || nativeBusy}
       >
-        {cta}
+        {nativeBusy ? <Spinner className="h-4 w-4" /> : cta}
       </button>
+      {nativeAdsAvailable() && (
+        <p className="relative mt-1.5 text-center text-[10px] font-bold text-mint">
+          📱 앱 환경 감지됨 — 진짜 AdMob 보상형 광고가 재생돼요
+        </p>
+      )}
 
       <div className="relative mt-3 space-y-1 text-[11px] leading-relaxed text-zinc-500">
         <p>내 누적 광고 적립(예상): <b className="text-zinc-300">{fmtEstWon(data.totalEstCents)}</b></p>
