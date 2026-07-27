@@ -31,6 +31,17 @@ const METHODS = [
 
 type MethodId = (typeof METHODS)[number]["id"];
 
+/** 사업자 없이 "그냥 바로 주는 곳" — 개인 결제 즉시 발송 서비스 바로가기 */
+function instantShops(keyword: string) {
+  const q = encodeURIComponent(keyword);
+  return [
+    { id: "kakao-gift", icon: "💬", label: "카톡 선물하기에서 검색", url: `https://gift.kakao.com/search?keyword=${q}` },
+    { id: "baemin", icon: "🎟", label: "배민 상품권몰", url: "https://gifticon.baemin.com" },
+    { id: "cultureland", icon: "📚", label: "컬쳐랜드(문상 즉구)", url: "https://www.cultureland.co.kr" },
+    { id: "naver-gift", icon: "💚", label: "네이버 선물하기", url: "https://gift.naver.com" },
+  ];
+}
+
 export default function FulfillmentPage() {
   const { push } = useToast();
   const { data, error, isLoading, mutate } = useSWR<{ items: PendingItem[] }>(
@@ -185,6 +196,25 @@ export default function FulfillmentPage() {
               <p className="mt-0.5 text-xs text-zinc-500">
                 {ship.winner.avatar} {ship.winner.name} · {ship.winner.email}
               </p>
+            </div>
+
+            <div>
+              <label className="label">🛒 사업자 없이 바로 사서 보내기</label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {instantShops(ship.title).map((s) => (
+                  <a
+                    key={s.id}
+                    href={s.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 rounded-xl border border-line bg-card-2/50 px-3 py-2.5 text-xs font-bold text-zinc-200 transition hover:border-gold/60 hover:text-gold"
+                  >
+                    <span className="text-base">{s.icon}</span>
+                    {s.label}
+                    <span className="ml-auto text-zinc-600">↗</span>
+                  </a>
+                ))}
+              </div>
             </div>
 
             <div>
