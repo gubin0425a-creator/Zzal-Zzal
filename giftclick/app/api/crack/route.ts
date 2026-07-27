@@ -5,7 +5,7 @@ import {
   ensureEgg, drawableProducts, drawProduct, issueReward, newEggMaxHp,
   newEggMaxHpEasy, pickFeaturedId,
 } from "@/lib/game";
-import { getGiftconProvider } from "@/lib/giftcon";
+import { fulfillGiftconIssue } from "@/lib/giftcon/issue";
 import { XP_PER_CLICK, XP_PER_HATCH, BONUS_CREDIT_CHANCE, EASY_HATCH_MAX_VALUE } from "@/lib/constants";
 import type { CrackMode } from "@/lib/types";
 
@@ -87,54 +87,24 @@ export async function POST(req: NextRequest) {
 
     d.exec("COMMIT");
 
-    // ---- 기프티콘 발급사 연동 (트랜잭션 커밋 후 외부 호출) ----
+    // ---- 기프티콘 발급사 연동 (트랜잭션 커밋 후 외부 호출, 공용 헬퍼) ----
     if (hatched && rewardRow && wonProduct) {
-      const provider = getGiftconProvider();
-      try {
-        const issued = await provider.issue({
-          title: wonProduct.name,
+      const issued = await fulfillGiftconIssue({
+        userId,
+        rewardRowId: (rewardRow as { id: string }).id,
+        product: {
+          name: wonProduct.name,
           value: wonProduct.value,
-          goodsCode: wonProduct.providerCode ?? null,
-          userId,
-          rewardId: (rewardRow as { id: string }).id,
-          payoutEmail: u.payout_email ?? null,
-        });
-        const issueT = now();
-        // 쿠폰번호 또는 완결(completed, 자동 송금)이면 즉시 발급(ISSUED),
-        // 아니면 수동 발송 모드의 "발송 대기(PENDING)"
-        const issueStatus = issued.couponNum || issued.completed ? "ISSUED" : "PENDING";
-        d.prepare(
-          `INSERT INTO giftcon_issues (id, user_id, reward_id, provider, tr_id, coupon_num, status, raw_json, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).run(
-          genId("iss"), userId, (rewardRow as { id: string }).id, provider.name,
-          issued.trId, issued.couponNum || null, issueStatus,
-          JSON.stringify(issued.raw ?? null), issueT,
-        );
-        // 발급사가 준 실제 핀코드가 있을 때만 교체 (수동 모드는 발송 완료 시 등록됨)
-        if (issued.couponNum) {
-          d.prepare("UPDATE rewards SET pin_code = ?, updated_at = ? WHERE id = ?")
-            .run(issued.couponNum, issueT, (rewardRow as { id: string }).id);
-        }
-        rewardRow = d.prepare("SELECT * FROM rewards WHERE id = ?")
-          .get((rewardRow as { id: string }).id)!;
-        (rewardRow as Record<string, unknown>).issue_provider = provider.name;
+          providerCode: wonProduct.providerCode ?? null,
+        },
+        payoutEmail: u.payout_email ?? null,
+      });
+      rewardRow = d.prepare("SELECT * FROM rewards WHERE id = ?")
+        .get((rewardRow as { id: string }).id)!;
+      if (issued.status !== "FAILED") {
+        (rewardRow as Record<string, unknown>).issue_provider = issued.provider;
         (rewardRow as Record<string, unknown>).issue_tr = issued.trId;
-        (rewardRow as Record<string, unknown>).issue_status = issueStatus;
-      } catch (e) {
-        // 발급 실패 → 프로바이더 정책에 따라 수동 발송 큐(PENDING)로 넘기거나 실패 이력만 기록
-        const failStatus = provider.failurePolicy === "pending" ? "PENDING" : "FAILED";
-        d.prepare(
-          `INSERT INTO giftcon_issues (id, user_id, reward_id, provider, tr_id, coupon_num, status, raw_json, created_at)
-           VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?)`,
-        ).run(
-          genId("iss"), userId, (rewardRow as { id: string }).id, provider.name, failStatus,
-          JSON.stringify({ error: e instanceof Error ? e.message : String(e), fallback: failStatus }), now(),
-        );
-        if (failStatus === "PENDING") {
-          (rewardRow as Record<string, unknown>).issue_provider = provider.name;
-          (rewardRow as Record<string, unknown>).issue_status = "PENDING";
-        }
+        (rewardRow as Record<string, unknown>).issue_status = issued.status;
       }
     }
 

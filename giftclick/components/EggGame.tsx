@@ -322,7 +322,7 @@ export default function EggGame() {
         </div>
 
         {/* 하단 액션 타일 (참고 앱의 하단 버튼열) */}
-        <div className="relative mx-auto mt-4 grid w-fit grid-cols-3 gap-2.5">
+        <div className="relative mx-auto mt-4 grid w-fit grid-cols-4 gap-2.5">
           <button
             onClick={claimBonus}
             disabled={bonusBusy}
@@ -331,6 +331,13 @@ export default function EggGame() {
             <span className="text-xl">⚡</span>
             <span className="text-[10px] font-bold text-zinc-300">미션 +3장</span>
           </button>
+          <Link
+            href="/shop"
+            className="flex flex-col items-center gap-1 rounded-2xl border border-line bg-card-2/60 px-4 py-2.5 transition hover:border-mint/60 active:scale-95"
+          >
+            <span className="text-xl">🛒</span>
+            <span className="text-[10px] font-bold text-zinc-300">충전소</span>
+          </Link>
           <Link
             href="/rewards"
             className="flex flex-col items-center gap-1 rounded-2xl border border-line bg-card-2/60 px-4 py-2.5 transition hover:border-gold/60 active:scale-95"

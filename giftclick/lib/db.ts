@@ -7,6 +7,7 @@ import type {
   Product,
   Reward,
   Crack,
+  Payment,
 } from "./types";
 import { levelFromXp } from "./constants";
 import { genId, now } from "./id";
@@ -130,6 +131,26 @@ CREATE TABLE IF NOT EXISTS ad_views (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ad_views_user ON ad_views(user_id, created_at DESC);
+-- 실제 구매(결제) 원장 — 깨기권 팩 / 확정 상품 직접구매
+CREATE TABLE IF NOT EXISTS payments (
+  id TEXT PRIMARY KEY,
+  order_id TEXT UNIQUE NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  item_kind TEXT NOT NULL,
+  item_code TEXT NOT NULL,
+  title TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  credits_granted INTEGER NOT NULL DEFAULT 0,
+  reward_id TEXT,
+  status TEXT NOT NULL DEFAULT 'READY',
+  method TEXT,
+  provider TEXT NOT NULL DEFAULT '결제 샌드박스',
+  pay_key TEXT,
+  raw_json TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id, created_at DESC);
 -- 간단한 설정/상태 KV (마지막 동기화 등)
 CREATE TABLE IF NOT EXISTS meta (
   key TEXT PRIMARY KEY,
@@ -253,6 +274,27 @@ export function toReward(r: any): Reward {
     provider: r.issue_provider ?? null,
     providerTr: r.issue_tr ?? null,
     providerStatus: r.issue_status ?? null,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function toPayment(r: any): Payment {
+  return {
+    id: r.id,
+    orderId: r.order_id,
+    userId: r.user_id,
+    itemKind: r.item_kind,
+    itemCode: r.item_code,
+    title: r.title,
+    amount: r.amount,
+    creditsGranted: r.credits_granted,
+    rewardId: r.reward_id ?? null,
+    status: r.status,
+    method: r.method ?? null,
+    provider: r.provider,
+    payKey: r.pay_key ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

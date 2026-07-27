@@ -75,6 +75,51 @@ export interface Reward {
   updatedAt: string;
 }
 
+export type PayItemKind = "PACK" | "DIRECT";
+export type PayStatus = "READY" | "CONFIRMING" | "DONE" | "FAILED" | "CANCELED";
+
+export interface Payment {
+  id: string;
+  orderId: string;
+  userId: string;
+  itemKind: PayItemKind;
+  itemCode: string;
+  title: string;
+  amount: number;
+  creditsGranted: number;
+  rewardId: string | null;
+  status: PayStatus;
+  method: string | null;
+  provider: string;
+  payKey: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreditPackItem {
+  code: string;
+  title: string;
+  credits: number;
+  bonus: number;
+  price: number;
+  tag?: string;
+}
+
+export interface PayCatalog {
+  provider: { name: string; mode: "sandbox" | "live"; ready: boolean };
+  packs: CreditPackItem[];
+  directs: {
+    productId: string;
+    name: string;
+    emoji: string;
+    brand: string;
+    value: number;
+    price: number;
+    soldOut: boolean;
+  }[];
+  recent: Payment[];
+}
+
 export interface Crack {
   id: string;
   userId: string;

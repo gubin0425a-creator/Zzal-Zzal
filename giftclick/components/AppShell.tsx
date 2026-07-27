@@ -13,6 +13,7 @@ import { XP_PER_LEVEL, xpIntoLevel } from "@/lib/constants";
 const NAV = [
   { href: "/dashboard", label: "대시보드", icon: "🏠" },
   { href: "/game", label: "금계란 깨기", icon: "🥚" },
+  { href: "/shop", label: "충전소", icon: "🛒" },
   { href: "/products", label: "상품 관리", icon: "🎁" },
   { href: "/rewards", label: "기프트 보관함", icon: "🎀" },
   { href: "/history", label: "깨기 내역", icon: "🧾" },
@@ -66,7 +67,7 @@ function UserCard({ user }: { user: UserPublic }) {
 
 function NavList({ onNavigate, isAdmin }: { onNavigate?: () => void; isAdmin?: boolean }) {
   const pathname = usePathname();
-  const items = isAdmin ? [...NAV.slice(0, 5), ADMIN_NAV, NAV[5]] : NAV;
+  const items = isAdmin ? [...NAV.slice(0, NAV.length - 1), ADMIN_NAV, NAV[NAV.length - 1]] : NAV;
   return (
     <nav className="flex flex-col gap-1">
       {items.map((n) => {
