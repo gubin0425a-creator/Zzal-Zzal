@@ -8,6 +8,12 @@ export function fmtNum(n: number): string {
   return krw.format(n);
 }
 
+/** 원×100(셴트) → "1.5원" / "12원" 소수점 광고 예상수익 표시 */
+export function fmtEstWon(cents: number): string {
+  const won = cents / 100;
+  return `${krw.format(Number(won.toFixed(2)))}원`;
+}
+
 function toDate(iso: string): Date {
   return new Date(iso.includes("T") ? iso : iso.replace(" ", "T") + "Z");
 }

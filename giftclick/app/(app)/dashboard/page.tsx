@@ -4,6 +4,8 @@ import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/components/client";
 import { EmptyState } from "@/components/ui";
+import AdRewardCard from "@/components/AdRewardCard";
+import AdBanner from "@/components/AdBanner";
 import type { StatsPayload } from "@/lib/types";
 import { fmtKRW, fmtNum, relTime } from "@/lib/format";
 import { XP_PER_LEVEL, xpIntoLevel, REWARD_STATUS_LABELS } from "@/lib/constants";
@@ -86,6 +88,14 @@ export default function DashboardPage() {
           sub={`누적 터치 ${fmtNum(totals.cracks)}회`} />
         <StatCard icon="🔥" label="연속 출석" value={`${streakDays}일`} accent="text-pink"
           sub={streakDays > 0 ? "연속 기록 유지 중!" : "오늘 첫 터치를 핀으로!"} />
+      </div>
+
+      {/* 광고 리워드 + 광고 자리 */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <AdRewardCard />
+        <div className="lg:col-span-2">
+          <AdBanner />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-5">

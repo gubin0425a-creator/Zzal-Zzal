@@ -118,6 +118,16 @@ CREATE TABLE IF NOT EXISTS giftcon_issues (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_issues_reward ON giftcon_issues(reward_id);
+-- 광고 시청 원장 (보상 깨기권 + 예상 수익 추정치)
+CREATE TABLE IF NOT EXISTS ad_views (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL DEFAULT '테스트 광고',
+  credits_granted INTEGER NOT NULL DEFAULT 0,
+  est_cents INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ad_views_user ON ad_views(user_id, created_at DESC);
 -- 간단한 설정/상태 KV (마지막 동기화 등)
 CREATE TABLE IF NOT EXISTS meta (
   key TEXT PRIMARY KEY,

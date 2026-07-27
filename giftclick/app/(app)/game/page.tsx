@@ -1,6 +1,8 @@
 "use client";
 
 import EggGame from "@/components/EggGame";
+import AdRewardCard from "@/components/AdRewardCard";
+import AdBanner from "@/components/AdBanner";
 
 export default function GamePage() {
   return (
@@ -14,6 +16,10 @@ export default function GamePage() {
         </div>
       </header>
       <EggGame />
+      <div className="grid gap-4 md:grid-cols-2">
+        <AdRewardCard />
+        <AdBanner />
+      </div>
     </div>
   );
 }

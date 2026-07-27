@@ -101,6 +101,41 @@ export interface LeaderRow {
   level: number;
 }
 
+export interface AdminAdStats {
+  totalViews: number;
+  totalEstCents: number;
+  todayViews: number;
+  todayEstCents: number;
+}
+
+export interface AdsStatus {
+  /** sandbox = 테스트 광고 / live = NEXT_PUBLIC_ADSENSE_* 설정됨 */
+  mode: "sandbox" | "live";
+  bannerReady: boolean;
+  rewardCredits: number;
+  dailyCap: number;
+  viewsToday: number;
+  remainingToday: number;
+  cooldownSec: number;
+  cooldownRemainSec: number;
+  estPerViewCents: number;
+  /** 내 오늘 예상 수익(견적) — 원 × 100 */
+  todayEstCents: number;
+  /** 내 누적 예상 수익(견적) */
+  totalEstCents: number;
+  mockAdSec: number;
+  admin?: AdminAdStats;
+}
+
+export interface AdCompleteResult {
+  ok: boolean;
+  credits: number;
+  viewsToday: number;
+  remainingToday: number;
+  estCents: number;
+  todayEstCents: number;
+}
+
 export interface StatsPayload {
   user: UserPublic;
   egg: EggState;
