@@ -3,9 +3,10 @@ import { db, genId, now, toReward, toUser } from "@/lib/db";
 import { requireAuth } from "@/lib/session";
 import {
   ensureEgg, drawableProducts, drawProduct, issueReward, newEggMaxHp,
+  newEggMaxHpEasy, pickFeaturedId,
 } from "@/lib/game";
 import { getGiftconProvider } from "@/lib/giftcon";
-import { XP_PER_CLICK, XP_PER_HATCH, BONUS_CREDIT_CHANCE } from "@/lib/constants";
+import { XP_PER_CLICK, XP_PER_HATCH, BONUS_CREDIT_CHANCE, EASY_HATCH_MAX_VALUE } from "@/lib/constants";
 import type { CrackMode } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +50,11 @@ export async function POST(req: NextRequest) {
       hatched = true;
       bonusCredit = false;
       xpGain += XP_PER_HATCH;
-      const product = drawProduct(drawableProducts());
+      // 이지모드 알: 가치 5,000원 이하 풀에서만 추첨
+      const easy = !!egg.easy;
+      const all = drawableProducts();
+      const pool = easy ? all.filter((p) => p.value <= EASY_HATCH_MAX_VALUE) : all;
+      const product = drawProduct(pool.length > 0 ? pool : all);
       wonProduct = product;
       if (product) {
         rewardRow = issueReward(userId, product);
@@ -58,10 +63,10 @@ export async function POST(req: NextRequest) {
             .run(t, product.id);
         }
       }
-      const maxHp = newEggMaxHp();
+      const maxHp = easy ? newEggMaxHpEasy() : newEggMaxHp();
       d.prepare(
-        "UPDATE egg_states SET hp = ?, max_hp = ?, cycle = cycle + 1, total_clicks = total_clicks + 1 WHERE user_id = ?",
-      ).run(maxHp, maxHp, userId);
+        "UPDATE egg_states SET hp = ?, max_hp = ?, cycle = cycle + 1, total_clicks = total_clicks + 1, featured_product_id = ? WHERE user_id = ?",
+      ).run(maxHp, maxHp, pickFeaturedId(easy ? EASY_HATCH_MAX_VALUE : undefined), userId);
       hp = maxHp;
     } else {
       d.prepare("UPDATE egg_states SET hp = ?, total_clicks = total_clicks + 1 WHERE user_id = ?")

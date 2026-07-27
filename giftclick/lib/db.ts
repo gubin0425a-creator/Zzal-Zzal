@@ -58,7 +58,9 @@ CREATE TABLE IF NOT EXISTS egg_states (
   hp INTEGER NOT NULL,
   max_hp INTEGER NOT NULL,
   cycle INTEGER DEFAULT 1,
-  total_clicks INTEGER DEFAULT 0
+  total_clicks INTEGER DEFAULT 0,
+  easy INTEGER NOT NULL DEFAULT 0,
+  featured_product_id TEXT
 );
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
@@ -153,6 +155,9 @@ function open(): DB {
   ensureColumn(db, "products", "provider_code", "provider_code TEXT");
   ensureColumn(db, "giftcon_issues", "method", "method TEXT");
   ensureColumn(db, "users", "payout_email", "payout_email TEXT");
+  // 이지모드 + 대표 상품 표시 (벤치마킹 디자인)
+  ensureColumn(db, "egg_states", "easy", "easy INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(db, "egg_states", "featured_product_id", "featured_product_id TEXT");
   return db;
 }
 
@@ -201,7 +206,14 @@ export function toUser(r: any): UserPublic {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toEgg(r: any): EggState {
-  return { hp: r.hp, maxHp: r.max_hp, cycle: r.cycle, totalClicks: r.total_clicks };
+  return {
+    hp: r.hp,
+    maxHp: r.max_hp,
+    cycle: r.cycle,
+    totalClicks: r.total_clicks,
+    easy: !!r.easy,
+    featured: null, // ensureEgg에서 상품 조인으로 채움
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

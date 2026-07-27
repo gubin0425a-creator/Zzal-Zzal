@@ -1,5 +1,5 @@
 import { db, genId, now, toEgg, toProduct } from "./db";
-import { DAILY_CREDITS, REWARD_EXPIRY_DAYS } from "./constants";
+import { DAILY_CREDITS, REWARD_EXPIRY_DAYS, EASY_HATCH_MAX_VALUE } from "./constants";
 import { todayKST } from "./format";
 import { genPinCode } from "./id";
 import type { EggState, Product } from "./types";
@@ -27,17 +27,61 @@ export function newEggMaxHp(): number {
   return 6 + Math.floor(Math.random() * 7); // 6~12번의 클릭으로 부화
 }
 
+export function newEggMaxHpEasy(): number {
+  return 3 + Math.floor(Math.random() * 3); // 이지모드: 3~5번
+}
+
+/** 알 위에 크게 표시되는 "대표 상품" id (해치 보상은 별개로 가중치 랜덤.
+ *  난이도와 같은 풀에서 뽑아 오해를 방지) */
+export function pickFeaturedId(maxValue?: number): string | null {
+  let pool = drawableProducts();
+  if (maxValue !== undefined) {
+    const filtered = pool.filter((p) => p.value <= maxValue);
+    if (filtered.length > 0) pool = filtered;
+  }
+  const pick = drawProduct(pool);
+  return pick?.id ?? null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function featuredOf(row: any) {
+  const pid = row?.featured_product_id;
+  if (!pid) return null;
+  const p = db()
+    .prepare("SELECT name, emoji, value, active FROM products WHERE id = ?")
+    .get(pid);
+  if (!p || Number(p.active) !== 1) return null;
+  return { emoji: String(p.emoji), name: String(p.name), value: Number(p.value) };
+}
+
 export function ensureEgg(userId: string): EggState {
   const d = db();
   let row = d.prepare("SELECT * FROM egg_states WHERE user_id = ?").get(userId);
   if (!row) {
     const maxHp = newEggMaxHp();
     d.prepare(
-      "INSERT INTO egg_states (user_id, hp, max_hp, cycle, total_clicks) VALUES (?, ?, ?, 1, 0)",
-    ).run(userId, maxHp, maxHp);
+      "INSERT INTO egg_states (user_id, hp, max_hp, cycle, total_clicks, featured_product_id) VALUES (?, ?, ?, 1, 0, ?)",
+    ).run(userId, maxHp, maxHp, pickFeaturedId());
     row = d.prepare("SELECT * FROM egg_states WHERE user_id = ?").get(userId)!;
   }
-  return toEgg(row);
+  return { ...toEgg(row), featured: featuredOf(row) };
+}
+
+/** 현재 알을 버리고 새 알로 교체 (스왑/난이도 전환 공용). cycle+1, 클릭 누적 유지 */
+export function respawnEgg(userId: string, easy: boolean): EggState {
+  const maxHp = easy ? newEggMaxHpEasy() : newEggMaxHp();
+  db()
+    .prepare(
+      "UPDATE egg_states SET hp = ?, max_hp = ?, cycle = cycle + 1, easy = ?, featured_product_id = ? WHERE user_id = ?",
+    )
+    .run(
+      maxHp,
+      maxHp,
+      easy ? 1 : 0,
+      pickFeaturedId(easy ? EASY_HATCH_MAX_VALUE : undefined),
+      userId,
+    );
+  return ensureEgg(userId);
 }
 
 export function drawableProducts(): Product[] {

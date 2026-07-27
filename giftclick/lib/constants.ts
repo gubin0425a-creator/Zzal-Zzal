@@ -58,3 +58,6 @@ export const TIER_LABELS: Record<Tier, string> = {
 };
 
 export const AVATARS = ["🐣", "🐤", "🦊", "🐰", "🐻", "🐼", "🐯", "🐸", "🦄", "😎"];
+
+/** 이지모드 해치 풀 상한 — 이 가치 이하 상품만 당첨 가능 */
+export const EASY_HATCH_MAX_VALUE = 5000;

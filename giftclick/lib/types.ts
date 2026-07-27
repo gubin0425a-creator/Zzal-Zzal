@@ -29,6 +29,10 @@ export interface EggState {
   maxHp: number;
   cycle: number;
   totalClicks: number;
+  /** 이지모드 알 여부 (HP 3~5, 해치 풀 5,000원 이하) */
+  easy: boolean;
+  /** 알에 표시되는 대표 상품 (해치 보상은 가중치 랜덤) */
+  featured: { emoji: string; name: string; value: number } | null;
 }
 
 export interface Product {
