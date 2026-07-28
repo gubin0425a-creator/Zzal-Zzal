@@ -1,8 +1,15 @@
 import { db, genId, now, toEgg, toProduct } from "./db";
-import { DAILY_CREDITS, REWARD_EXPIRY_DAYS, EASY_HATCH_MAX_VALUE } from "./constants";
+import {
+  DAILY_CREDITS,
+  REWARD_EXPIRY_DAYS,
+  EASY_HATCH_MAX_VALUE,
+  GUARANTEE_FILL_KRW,
+  GUARANTEE_MARGIN_KRW,
+  GUARANTEE_MAX_PRODUCT_VALUE,
+} from "./constants";
 import { todayKST } from "./format";
 import { genPinCode } from "./id";
-import type { EggState, Product } from "./types";
+import type { EggState, Guarantee, Product } from "./types";
 
 /** Lazy daily refill: resets credits to the daily amount once per Korean day. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,6 +61,42 @@ function featuredOf(row: any) {
   return { emoji: String(p.emoji), name: String(p.name), value: Number(p.value) };
 }
 
+/** 🎯 확정 드랍 게이지 정보 — 소액 대표 상품(기본 5,000원 이하) 알에만 부착.
+ *  목표 = 상품 가격 + 마진(기본 2,000원). 완충 시 이번 알 해치가 대표 상품으로 확정 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function guaranteeOf(row: any): Guarantee | null {
+  const fp = featuredOf(row);
+  if (!fp || fp.value > GUARANTEE_MAX_PRODUCT_VALUE) return null;
+  const target = fp.value + GUARANTEE_MARGIN_KRW;
+  const progress = Math.min(Math.max(Number(row?.guarantee_krw ?? 0), 0), target);
+  return { progress, target, fillPerAd: GUARANTEE_FILL_KRW, ready: progress >= target };
+}
+
+/** 광고 시청 1회 → 게이지 충전 (서버에서만 호출, 클라이언트 충전 루트 없음) */
+export function addGuaranteeFill(userId: string, krw = GUARANTEE_FILL_KRW): Guarantee | null {
+  const d = db();
+  ensureEgg(userId); // 행 보장
+  const row = d.prepare("SELECT * FROM egg_states WHERE user_id = ?").get(userId);
+  const cur = guaranteeOf(row);
+  if (!cur) return null; // 게이지 대상이 아닌 알(고가 대표 상품 등)이면 적립 없음
+  const next = Math.min(cur.target, cur.progress + krw);
+  d.prepare("UPDATE egg_states SET guarantee_krw = ? WHERE user_id = ?").run(next, userId);
+  return { ...cur, progress: next, ready: next >= cur.target };
+}
+
+/** 해치 성공 시 이번 알의 확정 드랍 대상(완충 + 대표 상품 유효)이면 그 상품 반환 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function guaranteedProductFor(eggRow: any): Product | null {
+  const pid = eggRow?.featured_product_id;
+  if (!pid) return null;
+  const info = guaranteeOf(eggRow);
+  if (!info?.ready) return null;
+  const p = db().prepare("SELECT * FROM products WHERE id = ?").get(pid);
+  // 장식된 사이에 비활성/재고 소진됐으면 확정 적용 불가 → 랜덤 풀로 폴스백
+  if (!p || Number(p.active) !== 1 || Number(p.stock) === 0) return null;
+  return toProduct(p);
+}
+
 export function ensureEgg(userId: string): EggState {
   const d = db();
   let row = d.prepare("SELECT * FROM egg_states WHERE user_id = ?").get(userId);
@@ -64,15 +107,15 @@ export function ensureEgg(userId: string): EggState {
     ).run(userId, maxHp, maxHp, pickFeaturedId());
     row = d.prepare("SELECT * FROM egg_states WHERE user_id = ?").get(userId)!;
   }
-  return { ...toEgg(row), featured: featuredOf(row) };
+  return { ...toEgg(row), featured: featuredOf(row), guarantee: guaranteeOf(row) };
 }
 
-/** 현재 알을 버리고 새 알로 교체 (스왑/난이도 전환 공용). cycle+1, 클릭 누적 유지 */
+/** 현재 알을 버리고 새 알로 교체 (스왑/난이도 전환 공용). cycle+1, 클릭 누적 유지, 게이지 초기화 */
 export function respawnEgg(userId: string, easy: boolean): EggState {
   const maxHp = easy ? newEggMaxHpEasy() : newEggMaxHp();
   db()
     .prepare(
-      "UPDATE egg_states SET hp = ?, max_hp = ?, cycle = cycle + 1, easy = ?, featured_product_id = ? WHERE user_id = ?",
+      "UPDATE egg_states SET hp = ?, max_hp = ?, cycle = cycle + 1, easy = ?, featured_product_id = ?, guarantee_krw = 0 WHERE user_id = ?",
     )
     .run(
       maxHp,

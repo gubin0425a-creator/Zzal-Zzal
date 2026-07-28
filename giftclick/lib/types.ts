@@ -24,6 +24,18 @@ export interface UserPublic {
   createdAt: string;
 }
 
+/** 🎯 확정 드랍 게이지 — 광고 시청으로 채우고 완충 시 이번 알 해치가 대표 상품으로 확정 */
+export interface Guarantee {
+  /** 채워진 금액(원) */
+  progress: number;
+  /** 목표 금액(원) = 대표 상품 가격 + 마진 */
+  target: number;
+  /** 광고 1회당 충전액(원) */
+  fillPerAd: number;
+  /** 게이지 완충 여부 — true면 이번 알 해치 시 대표 상품 확정 */
+  ready: boolean;
+}
+
 export interface EggState {
   hp: number;
   maxHp: number;
@@ -33,6 +45,8 @@ export interface EggState {
   easy: boolean;
   /** 알에 표시되는 대표 상품 (해치 보상은 가중치 랜덤) */
   featured: { emoji: string; name: string; value: number } | null;
+  /** 확정 드랍 게이지 (소액 대표 상품 알에만 부착, 없으면 null) */
+  guarantee: Guarantee | null;
 }
 
 export interface Product {
@@ -183,6 +197,8 @@ export interface AdCompleteResult {
   remainingToday: number;
   estCents: number;
   todayEstCents: number;
+  /** 이번 시청으로 충전된 확정 드랍 게이지 (부착된 알이 있을 때만) */
+  guarantee?: Guarantee | null;
 }
 
 export interface StatsPayload {

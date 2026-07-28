@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, genId, now, toReward, toUser } from "@/lib/db";
 import { requireAuth } from "@/lib/session";
 import {
-  ensureEgg, drawableProducts, drawProduct, issueReward, newEggMaxHp,
+  ensureEgg, drawableProducts, drawProduct, guaranteedProductFor, issueReward, newEggMaxHp,
   newEggMaxHpEasy, pickFeaturedId,
 } from "@/lib/game";
 import { fulfillGiftconIssue } from "@/lib/giftcon/issue";
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     let rewardRow: any = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let wonProduct: any = null;
+    let guaranteed = false;
 
     if (hp <= 0) {
       // ---- hatch! ----
@@ -52,20 +53,31 @@ export async function POST(req: NextRequest) {
       xpGain += XP_PER_HATCH;
       // 이지모드 알: 가치 5,000원 이하 풀에서만 추첨
       const easy = !!egg.easy;
-      const all = drawableProducts();
-      const pool = easy ? all.filter((p) => p.value <= EASY_HATCH_MAX_VALUE) : all;
-      const product = drawProduct(pool.length > 0 ? pool : all);
-      wonProduct = product;
-      if (product) {
-        rewardRow = issueReward(userId, product);
-        if (product.stock > 0) {
+      // 🎯 확정 드랍: 게이지 완충 상태면 대표 상품으로 확정 (광고로 채운 게이지)
+      const eggRow = d.prepare("SELECT * FROM egg_states WHERE user_id = ?").get(userId);
+      const guaranteedPick = guaranteedProductFor(eggRow);
+      if (guaranteedPick) {
+        guaranteed = true;
+        wonProduct = guaranteedPick;
+      } else {
+        const all = drawableProducts();
+        const pool = easy ? all.filter((p) => p.value <= EASY_HATCH_MAX_VALUE) : all;
+        wonProduct = drawProduct(pool.length > 0 ? pool : all);
+      }
+      if (wonProduct) {
+        rewardRow = issueReward(
+          userId,
+          wonProduct,
+          guaranteed ? { memo: "🎯 확정 드랍 — 광고 게이지 완충 보상" } : undefined,
+        );
+        if (wonProduct.stock > 0) {
           d.prepare("UPDATE products SET stock = stock - 1, updated_at = ? WHERE id = ? AND stock > 0")
-            .run(t, product.id);
+            .run(t, wonProduct.id);
         }
       }
       const maxHp = easy ? newEggMaxHpEasy() : newEggMaxHp();
       d.prepare(
-        "UPDATE egg_states SET hp = ?, max_hp = ?, cycle = cycle + 1, total_clicks = total_clicks + 1, featured_product_id = ? WHERE user_id = ?",
+        "UPDATE egg_states SET hp = ?, max_hp = ?, cycle = cycle + 1, total_clicks = total_clicks + 1, featured_product_id = ?, guarantee_krw = 0 WHERE user_id = ?",
       ).run(maxHp, maxHp, pickFeaturedId(easy ? EASY_HATCH_MAX_VALUE : undefined), userId);
       hp = maxHp;
     } else {
@@ -114,6 +126,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       mode,
       hatched,
+      guaranteed,
       bonusCredit,
       xpGain,
       credits: user.credits,

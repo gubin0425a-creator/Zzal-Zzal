@@ -13,7 +13,7 @@ import { tierOf, TIER_LABELS, XP_PER_CLICK } from "@/lib/constants";
 
 interface MeData { user: UserPublic; egg: EggState; }
 interface CrackResponse {
-  ok: boolean; hatched: boolean; bonusCredit: boolean; xpGain: number;
+  ok: boolean; hatched: boolean; guaranteed?: boolean; bonusCredit: boolean; xpGain: number;
   credits: number; xp: number; level: number; egg: EggState; reward: Reward | null;
   error?: string;
 }
@@ -37,6 +37,7 @@ export default function EggGame() {
   const [shakeKey, setShakeKey] = useState(0);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [result, setResult] = useState<Reward | null>(null);
+  const [guaranteedWin, setGuaranteedWin] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [bonusBusy, setBonusBusy] = useState(false);
   const [swapBusy, setSwapBusy] = useState(false);
@@ -85,6 +86,7 @@ export default function EggGame() {
         if (res.hatched) {
           setAuto(false);
           if (res.reward) {
+            setGuaranteedWin(!!res.guaranteed);
             setResult(res.reward);
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 2600);
@@ -123,7 +125,7 @@ export default function EggGame() {
   /** 🔀 알 교체 — 진행 중인 균열을 버리고 새 알 */
   async function swapEgg() {
     if (swapBusy || !data) return;
-    if (!window.confirm("지금 알을 버리고 새 알로 교체할까요?\n(지금까지의 균열 진행은 사라져요)")) return;
+    if (!window.confirm("지금 알을 버리고 새 알로 교체할까요?\n(지금까지의 균열 진행과 확정 게이지가 초기화돼요)")) return;
     setSwapBusy(true);
     try {
       const res = await api<{ ok: boolean; egg: EggState }>("/api/egg/swap", { method: "POST" });
@@ -140,8 +142,8 @@ export default function EggGame() {
   async function changeDifficulty(next: boolean) {
     if (easyBusy || !data) return;
     const msg = next
-      ? "🐣 이지모드로 바꿀까요?\n알이 3~5번이면 부화해요. 대신 상품은 5,000원 이하만 나와요!\n(지금 알도 새로 교체해요)"
-      : "🔥 노말 모드로 돌아갈까요? 전체 상품 풀(최대 5만 원)이 열립니다!\n(지금 알도 새로 교체해요)";
+      ? "🐣 이지모드로 바꿀까요?\n알이 3~5번이면 부화해요. 대신 상품은 5,000원 이하만 나와요!\n(지금 알도 새로 교체해요 — 확정 게이지도 초기화)"
+      : "🔥 노말 모드로 돌아갈까요? 전체 상품 풀(최대 5만 원)이 열립니다!\n(지금 알도 새로 교체해요 — 확정 게이지도 초기화)";
     if (!window.confirm(msg)) return;
     setEasyBusy(true);
     try {
@@ -228,6 +230,59 @@ export default function EggGame() {
             </p>
           </div>
         </div>
+
+        {/* 🎯 확정 드랍 게이지 — 광고 시청으로 채우면 이번 알의 대표 상품이 확정 */}
+        {egg.guarantee && (
+          <div className="relative mx-auto mt-3 w-full max-w-sm">
+            <div
+              className={`rounded-2xl border p-3 ${
+                egg.guarantee.ready
+                  ? "border-gold/70 bg-gold/15 shadow-[0_0_30px_rgba(247,201,72,0.3)]"
+                  : "border-line bg-card-2/60"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-black text-white">
+                  {egg.guarantee.ready ? "🎯 확정 드랍 준비 완료!" : "🎯 확정 드랍 게이지"}
+                </p>
+                <p className={`text-xs font-black ${egg.guarantee.ready ? "text-gold" : "text-neon"}`}>
+                  {fmtKRW(egg.guarantee.progress)} / {fmtKRW(egg.guarantee.target)}
+                </p>
+              </div>
+              <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-ink-2">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    egg.guarantee.ready
+                      ? "bg-gradient-to-r from-gold-deep via-gold to-white"
+                      : "bg-gradient-to-r from-neon to-gold"
+                  }`}
+                  style={{
+                    width: `${Math.min(100, (egg.guarantee.progress / egg.guarantee.target) * 100)}%`,
+                  }}
+                />
+              </div>
+              {egg.guarantee.ready ? (
+                <p className="mt-1.5 text-center text-[11px] font-black text-gold">
+                  ✨ 이 알을 깨면 {egg.featured?.emoji} {egg.featured?.name} 100% 당첨! ✨
+                </p>
+              ) : (
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-[10px] leading-snug text-zinc-500">
+                    광고 1회 시청 = +{fmtKRW(egg.guarantee.fillPerAd)}
+                    <br />
+                    완충 시 이 알 부화가 확정 보상으로!
+                  </p>
+                  <button
+                    onClick={() => window.dispatchEvent(new Event("gc:watch-ad"))}
+                    className="shrink-0 cursor-pointer rounded-xl bg-gradient-to-r from-neon to-gold px-3 py-1.5 text-[11px] font-black text-ink transition hover:brightness-110 active:scale-95"
+                  >
+                    📺 광고로 채우기
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <p className="relative mt-3 text-center text-sm font-bold text-zinc-200">
           알을 깨면 보상이 지급됩니다! <span className="text-gold">가즈아🔥</span>
         </p>
@@ -252,6 +307,12 @@ export default function EggGame() {
               aria-label="금계란 두들기기"
             >
               <EggArt stage={crackStage} className="w-full drop-shadow-[0_18px_36px_rgba(247,201,72,0.25)]" />
+              {/* 🎯 확정 드랍 완충 배지 */}
+              {egg.guarantee?.ready && (
+                <span className="pop-in absolute -left-2 -top-1 z-30 rotate-[-8deg] rounded-xl border-2 border-gold bg-gold px-2.5 py-1 text-[11px] font-black text-ink shadow-[0_0_24px_rgba(247,201,72,0.65)]">
+                  🎯 확정!
+                </span>
+              )}
               {/* 대표 상품 라벨 (참고 이미지: 알 안에 상품 크게) */}
               <div className="pointer-events-none absolute inset-x-4 top-[28%] z-10 text-center">
                 {egg.featured ? (
@@ -315,7 +376,9 @@ export default function EggGame() {
                 <span className="text-zinc-500">부화까지 평균 {egg.hp}번 남음</span>
               </p>
               <p className="relative z-20 mt-1 text-center text-[10px] font-bold text-zinc-500">
-                🎰 알 안 글자는 대표 상품 장식 — 부화하면 풀에서 무작위로 1개가 나와요
+                {egg.guarantee?.ready
+                  ? "🎯 확정 드랍 완충! 이번 부화는 대표 상품으로 확정돼요"
+                  : "🎰 알 안 글자는 대표 상품 장식 — 부화하면 풀에서 무작위로 1개가 나와요"}
               </p>
             </>
           )}
@@ -408,6 +471,16 @@ export default function EggGame() {
                   : "🎁 미스터리"}
               </dd>
             </div>
+            {egg.guarantee && (
+              <div className="flex justify-between">
+                <dt className="text-zinc-400">🎯 확정 게이지</dt>
+                <dd className={`font-black ${egg.guarantee.ready ? "text-gold" : "text-neon"}`}>
+                  {egg.guarantee.ready
+                    ? "완충 — 확정 대기!"
+                    : `${Math.round((egg.guarantee.progress / egg.guarantee.target) * 100)}%`}
+                </dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-zinc-400">이 알에 사용한 터치</dt>
               <dd className="font-bold text-zinc-200">{egg.maxHp - egg.hp}회</dd>
@@ -425,6 +498,7 @@ export default function EggGame() {
             <li className="flex gap-2"><span>🔀</span> 맘에 안 드는 알은 교체로 새 알을 받아요</li>
             <li className="flex gap-2"><span>⭐</span> 8% 확률로 터치 시 깨기권 반사!</li>
             <li className="flex gap-2"><span>🏆</span> 노말 모드에만 5만 원 레전더리가 출현해요</li>
+            <li className="flex gap-2"><span>🎯</span> 소액 상품 알엔 확정 게이지! 광고로 완충하면 대표 상품이 확정</li>
             <li className="flex gap-2"><span>🙌</span> 당첨 기프트는 보관함에 즉시 발급돼요</li>
           </ul>
           <Link href="/products" className="btn-ghost mt-4 w-full text-xs">
@@ -440,6 +514,11 @@ export default function EggGame() {
         {result && (
           <div className="text-center">
             <p className="text-xs font-black tracking-widest text-gold">🎉 GOLDEN EGG HATCHED 🎉</p>
+            {guaranteedWin && (
+              <p className="pop-in mx-auto mt-2 w-fit rounded-xl border-2 border-gold bg-gold px-3 py-1 text-xs font-black text-ink shadow-[0_0_24px_rgba(247,201,72,0.55)]">
+                🎯 확정 드랍 성공! 게이지 완충 보상
+              </p>
+            )}
             <div className="bounce-soft mx-auto mt-4 flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-gold/30 to-violet/20 text-7xl">
               {result.emoji}
             </div>

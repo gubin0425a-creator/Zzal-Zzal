@@ -1,5 +1,6 @@
 import { db, genId, now } from "./db";
-import type { AdsStatus } from "./types";
+import { addGuaranteeFill } from "./game";
+import type { AdsStatus, Guarantee } from "./types";
 
 // ── 광고 리워드 설정 (env로 조절) ────────────────────────────
 function intEnv(name: string, def: number, min: number, max: number): number {
@@ -109,6 +110,7 @@ export type GrantResult =
       remainingToday: number;
       estCents: number;
       todayEstCents: number;
+      guarantee: Guarantee | null;
     }
   | { ok: false; error: string; status: number };
 
@@ -172,6 +174,9 @@ export function grantAdReward(uid: string, fixedId?: string, providerOverride?: 
     d.prepare("SELECT credits c FROM users WHERE id = ?").get(uid)?.c ?? 0,
   );
 
+  // 🎯 현재 알의 확정 드랍 게이지 충전 (소액 대표 상품 알에만 부착됨)
+  const guarantee = addGuaranteeFill(uid);
+
   return {
     ok: true,
     credits,
@@ -179,5 +184,6 @@ export function grantAdReward(uid: string, fixedId?: string, providerOverride?: 
     remainingToday: Math.max(0, cfg.dailyCap - (todayRows.length + 1)),
     estCents: est,
     todayEstCents: todayRows.reduce((s, r) => s + Number(r.est_cents || 0), 0) + est,
+    guarantee,
   };
 }

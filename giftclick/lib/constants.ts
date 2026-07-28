@@ -61,3 +61,19 @@ export const AVATARS = ["🐣", "🐤", "🦊", "🐰", "🐻", "🐼", "🐯", 
 
 /** 이지모드 해치 풀 상한 — 이 가치 이하 상품만 당첨 가능 */
 export const EASY_HATCH_MAX_VALUE = 5000;
+
+// ── 🎯 확정 드랍 게이지 (광고 시청으로 채우는 확정 보상 게이지) ──
+function intEnv(name: string, def: number, min: number, max: number): number {
+  const n = parseInt(process.env[name] ?? "", 10);
+  if (!Number.isFinite(n)) return def;
+  return Math.min(max, Math.max(min, n));
+}
+
+/** 광고 1회 시청당 게이지 충전액(원) — ⚠️ 게임 내 가치이며 실제 광고 수익이 아님!
+ *  실제 보상형 광고 수익은 1회당 약 2~10원 수준이라 이 값이 크면 적자 구조가 됨.
+ *  재미 우선 기본 100원, 수익 맞추려면 ADS_GUARANTEE_FILL=5~10 권장 */
+export const GUARANTEE_FILL_KRW = intEnv("ADS_GUARANTEE_FILL", 100, 1, 100_000);
+/** 확정 드랍 목표 = 대표 상품 가격 + 이 마진 (예: 5,000원 카드 → 목표 7,000원) */
+export const GUARANTEE_MARGIN_KRW = intEnv("ADS_GUARANTEE_MARGIN", 2000, 0, 100_000);
+/** 이 가격 이하 대표 상품 알에만 게이지가 붙음 (고가 상품 확정 남발 방지) */
+export const GUARANTEE_MAX_PRODUCT_VALUE = intEnv("ADS_GUARANTEE_MAX_VALUE", 5000, 0, 1_000_000);

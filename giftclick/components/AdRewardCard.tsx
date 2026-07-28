@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { api, fetcher } from "./client";
 import { useToast } from "./Toast";
@@ -48,6 +48,17 @@ export default function AdRewardCard() {
     return () => clearTimeout(t);
   }, [open, left]);
 
+  // 🎯 게임 화면 "광고로 채우기" 버튼 → 이 카드의 광고 재생을 대신 트리거
+  const startAdRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    startAdRef.current = startAd;
+  });
+  useEffect(() => {
+    const handler = () => void startAdRef.current();
+    window.addEventListener("gc:watch-ad", handler);
+    return () => window.removeEventListener("gc:watch-ad", handler);
+  }, []);
+
   const cap = data?.dailyCap ?? 10;
   const viewsToday = data?.viewsToday ?? 0;
   const exhausted = viewsToday >= cap;
@@ -90,7 +101,7 @@ export default function AdRewardCard() {
       }
     }
 
-    // 브라우저/테스트: 샌드박스 모의 광고
+        // 브라우저/테스트: 샌드박스 모의 광고
     setCreative(MOCK_ADS[Math.floor(Math.random() * MOCK_ADS.length)]);
     setLeft(mockSec);
     setOpen(true);
@@ -102,6 +113,14 @@ export default function AdRewardCard() {
     try {
       const res = await api<AdCompleteResult>("/api/ads/complete", { method: "POST" });
       push(`광고 시청 완료! 깨기권이 ${res.credits}개가 됐어요 🎫`, "success");
+      if (res.guarantee) {
+        push(
+          res.guarantee.ready
+            ? "🎯 확정 드랍 게이지 완충! 이번 알은 대표 상품으로 확정!"
+            : `🎯 확정 게이지 ${fmtEstWon(res.guarantee.progress * 100)} / ${fmtEstWon(res.guarantee.target * 100)}`,
+          res.guarantee.ready ? "success" : "info",
+        );
+      }
       setOpen(false);
       await mutate();
       globalMutate("/api/auth/me");

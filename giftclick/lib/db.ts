@@ -179,6 +179,7 @@ function open(): DB {
   // 이지모드 + 대표 상품 표시 (벤치마킹 디자인)
   ensureColumn(db, "egg_states", "easy", "easy INTEGER NOT NULL DEFAULT 0");
   ensureColumn(db, "egg_states", "featured_product_id", "featured_product_id TEXT");
+  ensureColumn(db, "egg_states", "guarantee_krw", "guarantee_krw INTEGER NOT NULL DEFAULT 0");
   return db;
 }
 
@@ -234,6 +235,7 @@ export function toEgg(r: any): EggState {
     totalClicks: r.total_clicks,
     easy: !!r.easy,
     featured: null, // ensureEgg에서 상품 조인으로 채움
+    guarantee: null, // ensureEgg에서 채움
   };
 }
 

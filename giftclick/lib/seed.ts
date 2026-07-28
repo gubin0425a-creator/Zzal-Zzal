@@ -43,6 +43,7 @@ const PRODUCTS: Array<{
   { name: "올리브영 50,000원권", brand: "올리브영", category: "BEAUTY", description: "전 최고 보스템! 기프트카드", emoji: "💄", value: 50000, weight: 1, stock: 3 },
   { name: "배달 30,000원 쿠폰", brand: "배달의민족", category: "FOOD", description: "야식은 거기서 거기, 쿠폰이 최고", emoji: "🛵", value: 30000, weight: 3, stock: 6 },
   { name: "카카오 이모티콘", brand: "카카오", category: "CULTURE", description: "인기 이모티콘 랜덤 지급", emoji: "😆", value: 2500, weight: 25, stock: -1 },
+  { name: "구글 Play 기프트카드 5,000원", brand: "Google Play", category: "CULTURE", description: "Play 스토어 게임/앱/영화 결제 코드 — 확정 드랍 인기템", emoji: "🎮", value: 5000, weight: 16, stock: -1 },
 ];
 
 export function runSeed(d: DBHandle) {
