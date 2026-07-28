@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySessionToken } from "@/lib/jwt";
 import { COOKIE_NAME } from "@/lib/constants";
 
-const PUBLIC_PAGES = ["/login", "/signup"];
+const PUBLIC_PAGES = ["/login", "/signup", "/privacy"];
 const PUBLIC_API = [
   "/api/auth/login",
   "/api/auth/signup",
